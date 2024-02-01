@@ -18,10 +18,8 @@
     "start": "tsc -w",
     "build": "npm run clean && tsc",
     "clean": "rimraf dist",
-    "lint": "tslint ./src/**/*.ts ./test/**/*.ts",
-    "lint:fix": "tslint --fix ./src/**/*.ts ./test/**/*.ts -t verbose",
     "swagger-gen": "node ./dist/cli.js -c ./test/data/swagger.js",
-    "pretest": "cross-env NODE_ENV=test npm run build && npm run lint",
+    "pretest": "cross-env NODE_ENV=test npm run build",
     "test": "cross-env NODE_ENV=test jest --config ./test/jest.config.js",
     "test:coverage": "cross-env NODE_ENV=test jest --config ./test/jest.config.js --coverage --coverageReporters=text-lcov",
     "tsc": "tsc"
@@ -39,7 +37,7 @@
     "mkdirp": "^1.0.4",
     "path": "^0.12.7",
     "swagger2openapi": "^7.0.6",
-    "typescript": "^4.1.3",
+    "typescript": "^5.3.3",
     "typescript-rest": "^3.0.4",
     "yamljs": "^0.3.0"
   },

@@ -1,7 +1,7 @@
-import * as ts from 'typescript';
+import * as ts from 'typescript'
 
 export function getDecorators(node: ts.Node, isMatching: (identifier: DecoratorData) => boolean): Array<DecoratorData> {
-    const decorators = node.decorators;
+    const decorators = ts.canHaveDecorators(node) ? ts.getDecorators(node) : [];
     if (!decorators || !decorators.length) { return []; }
 
     return decorators

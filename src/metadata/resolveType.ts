@@ -1,9 +1,9 @@
-import * as _ from 'lodash';
-import * as ts from 'typescript';
-import { getDecoratorName } from '../utils/decoratorUtils';
-import { getFirstMatchingJSDocTagName } from '../utils/jsDocUtils';
-import { keywords } from './keywordKinds';
-import { ArrayType, EnumerateType, MetadataGenerator, ObjectType, Property, ReferenceType, Type } from './metadataGenerator';
+import * as _ from 'lodash'
+import * as ts from 'typescript'
+import { getDecoratorName } from '../utils/decoratorUtils'
+import { getFirstMatchingJSDocTagName } from '../utils/jsDocUtils'
+import { keywords } from './keywordKinds'
+import { ArrayType, EnumerateType, MetadataGenerator, ObjectType, Property, ReferenceType, Type } from './metadataGenerator'
 
 const syntaxKindMap: { [kind: number]: string } = {};
 syntaxKindMap[ts.SyntaxKind.NumberKeyword] = 'number';
@@ -568,14 +568,21 @@ function getModelTypeAdditionalProperties(node: UsableDeclaration) {
     return undefined;
 }
 
+function getModifiers(node:ts.Node){
+    if(ts.canHaveModifiers(node)){
+        return ts.getModifiers(node) ?? [];
+    }
+    return []
+}
+
 function hasPublicMemberModifier(node: ts.Node) {
-    return !node.modifiers || node.modifiers.every(modifier => {
+    return getModifiers(node).length > 0 && getModifiers(node).every(modifier => {
         return modifier.kind !== ts.SyntaxKind.ProtectedKeyword && modifier.kind !== ts.SyntaxKind.PrivateKeyword;
     });
 }
 
 function hasPublicConstructorModifier(node: ts.Node) {
-    return node.modifiers && node.modifiers.some(modifier => {
+    return getModifiers(node).length > 0 && getModifiers(node).some(modifier => {
         return modifier.kind === ts.SyntaxKind.PublicKeyword;
     });
 }
