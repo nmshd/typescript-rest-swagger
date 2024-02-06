@@ -16,4 +16,5 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 Object.defineProperty(exports, "__esModule", { value: true });
 __exportStar(require("./metadata/metadataGenerator"), exports);
 __exportStar(require("./swagger/generator"), exports);
+__exportStar(require("./swagger/swagger"), exports);
 //# sourceMappingURL=index.js.map
