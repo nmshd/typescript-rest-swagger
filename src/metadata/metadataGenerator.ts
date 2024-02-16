@@ -1,10 +1,10 @@
-import * as debug from 'debug';
-import * as glob from 'glob';
-import * as _ from 'lodash';
-import * as mm from 'minimatch';
-import * as ts from 'typescript';
-import { isDecorator } from '../utils/decoratorUtils';
-import { ControllerGenerator } from './controllerGenerator';
+import * as debug from 'debug'
+import * as glob from 'glob'
+import * as _ from 'lodash'
+import { match } from 'minimatch'
+import * as ts from 'typescript'
+import { isDecorator } from '../utils/decoratorUtils'
+import { ControllerGenerator } from './controllerGenerator'
 
 export class MetadataGenerator {
     public static current: MetadataGenerator;
@@ -29,7 +29,7 @@ export class MetadataGenerator {
         this.program.getSourceFiles().forEach(sf => {
             if (this.ignorePaths && this.ignorePaths.length) {
                 for (const path of this.ignorePaths) {
-                    if(!sf.fileName.includes('node_modules/typescript-rest/') && mm(sf.fileName, path)) {
+                    if(!sf.fileName.includes('node_modules/typescript-rest/') && match([sf.fileName], path)) {
                         return;
                     }
                 }

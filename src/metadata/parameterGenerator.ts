@@ -1,7 +1,7 @@
-import * as ts from 'typescript';
-import { getDecoratorName, getDecoratorOptions, getDecoratorTextValue } from '../utils/decoratorUtils';
-import { MetadataGenerator, Parameter, Type } from './metadataGenerator';
-import { getCommonPrimitiveAndArrayUnionType, getLiteralValue, resolveType } from './resolveType';
+import * as ts from 'typescript'
+import { getDecoratorName, getDecoratorOptions, getDecoratorTextValue } from '../utils/decoratorUtils'
+import { MetadataGenerator, Parameter, Type } from './metadataGenerator'
+import { getCommonPrimitiveAndArrayUnionType, getLiteralValue, resolveType } from './resolveType'
 
 export class ParameterGenerator {
     constructor(
@@ -61,7 +61,7 @@ export class ParameterGenerator {
             in: 'param',
             name: getDecoratorTextValue(this.parameter, ident => ident.text === 'Param') || parameterName,
             parameterName: parameterName,
-            required: !parameter.questionToken,
+            required: this.isRequired(parameter),
             type: type
         };
     }
@@ -74,7 +74,7 @@ export class ParameterGenerator {
             in: 'context',
             name: parameterName,
             parameterName: parameterName,
-            required: !parameter.questionToken,
+            required: this.isRequired(parameter),
             type: {typeName: ''}
         };
     }
@@ -91,7 +91,7 @@ export class ParameterGenerator {
             in: 'formData',
             name: getDecoratorTextValue(this.parameter, ident => ident.text === 'FileParam') || parameterName,
             parameterName: parameterName,
-            required: !parameter.questionToken,
+            required: this.isRequired(parameter),
             type: { typeName: 'file' }
         };
     }
@@ -108,7 +108,7 @@ export class ParameterGenerator {
             in: 'formData',
             name: getDecoratorTextValue(this.parameter, ident => ident.text === 'FilesParam') || parameterName,
             parameterName: parameterName,
-            required: !parameter.questionToken,
+            required: this.isRequired(parameter),
             type: { typeName: 'file' }
         };
     }
@@ -126,7 +126,7 @@ export class ParameterGenerator {
             in: 'formData',
             name: getDecoratorTextValue(this.parameter, ident => ident.text === 'FormParam') || parameterName,
             parameterName: parameterName,
-            required: !parameter.questionToken && !parameter.initializer,
+            required: this.isRequired(parameter),
             type: type
         };
     }
@@ -144,7 +144,7 @@ export class ParameterGenerator {
             in: 'cookie',
             name: getDecoratorTextValue(this.parameter, ident => ident.text === 'CookieParam') || parameterName,
             parameterName: parameterName,
-            required: !parameter.questionToken && !parameter.initializer,
+            required: this.isRequired(parameter),
             type: {typeName: ''}
         };
     }
@@ -162,7 +162,7 @@ export class ParameterGenerator {
             in: 'body',
             name: parameterName,
             parameterName: parameterName,
-            required: !parameter.questionToken && !parameter.initializer,
+            required: this.isRequired(parameter),
             type: type
         };
     }
@@ -180,7 +180,7 @@ export class ParameterGenerator {
             in: 'header',
             name: getDecoratorTextValue(this.parameter, ident => ident.text === 'HeaderParam') || parameterName,
             parameterName: parameterName,
-            required: !parameter.questionToken && !parameter.initializer,
+            required: this.isRequired(parameter),
             type: type
         };
     }
@@ -209,9 +209,14 @@ export class ParameterGenerator {
             // minItems: parameterOptions.minItems,
             name: getDecoratorTextValue(this.parameter, ident => ident.text === 'QueryParam') || parameterName,
             parameterName: parameterName,
-            required: !parameter.questionToken && !parameter.initializer,
+            required: this.isRequired(parameter),
             type: type
         };
+    }
+    isRequired(parameter: ts.ParameterDeclaration): boolean {
+
+        let isUndefinedUnion = parameter.type.kind === ts.SyntaxKind.UnionType && (parameter.type as ts.UnionTypeNode).types.some(t => t.kind === ts.SyntaxKind.UndefinedKeyword);
+        return !parameter.questionToken && !parameter.initializer &&  !isUndefinedUnion;
     }
 
     private getPathParameter(parameter: ts.ParameterDeclaration): Parameter {
@@ -279,6 +284,7 @@ export class ParameterGenerator {
         if (!initializer) { return; }
         return getLiteralValue(initializer);
     }
+
 }
 
 class InvalidParameterException extends Error { }

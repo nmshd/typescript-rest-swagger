@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.keywords = void 0;
-var typescript_1 = require("typescript");
+const typescript_1 = require("typescript");
 exports.keywords = [
     typescript_1.SyntaxKind.AnyKeyword,
     typescript_1.SyntaxKind.UnknownKeyword,

@@ -1,35 +1,23 @@
 "use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ParameterGenerator = void 0;
-var ts = require("typescript");
-var decoratorUtils_1 = require("../utils/decoratorUtils");
-var metadataGenerator_1 = require("./metadataGenerator");
-var resolveType_1 = require("./resolveType");
-var ParameterGenerator = /** @class */ (function () {
-    function ParameterGenerator(parameter, method, path, genericTypeMap) {
+const ts = require("typescript");
+const decoratorUtils_1 = require("../utils/decoratorUtils");
+const metadataGenerator_1 = require("./metadataGenerator");
+const resolveType_1 = require("./resolveType");
+class ParameterGenerator {
+    parameter;
+    method;
+    path;
+    genericTypeMap;
+    constructor(parameter, method, path, genericTypeMap) {
         this.parameter = parameter;
         this.method = method;
         this.path = path;
         this.genericTypeMap = genericTypeMap;
     }
-    ParameterGenerator.prototype.generate = function () {
-        var _this = this;
-        var decoratorName = (0, decoratorUtils_1.getDecoratorName)(this.parameter, function (identifier) { return _this.supportParameterDecorator(identifier.text); });
+    generate() {
+        const decoratorName = (0, decoratorUtils_1.getDecoratorName)(this.parameter, identifier => this.supportParameterDecorator(identifier.text));
         switch (decoratorName) {
             case 'Param':
                 return this.getRequestParameter(this.parameter);
@@ -57,83 +45,83 @@ var ParameterGenerator = /** @class */ (function () {
             default:
                 return this.getBodyParameter(this.parameter);
         }
-    };
-    ParameterGenerator.prototype.getCurrentLocation = function () {
-        var methodId = this.parameter.parent.name;
-        var controllerId = this.parameter.parent.parent.name;
-        return "".concat(controllerId.text, ".").concat(methodId.text);
-    };
-    ParameterGenerator.prototype.getRequestParameter = function (parameter) {
-        var parameterName = parameter.name.text;
-        var type = this.getValidatedType(parameter);
+    }
+    getCurrentLocation() {
+        const methodId = this.parameter.parent.name;
+        const controllerId = this.parameter.parent.parent.name;
+        return `${controllerId.text}.${methodId.text}`;
+    }
+    getRequestParameter(parameter) {
+        const parameterName = parameter.name.text;
+        const type = this.getValidatedType(parameter);
         if (!this.supportsBodyParameters(this.method)) {
-            throw new Error("Param can't support '".concat(this.getCurrentLocation(), "' method."));
+            throw new Error(`Param can't support '${this.getCurrentLocation()}' method.`);
         }
         return {
             description: this.getParameterDescription(parameter),
             in: 'param',
-            name: (0, decoratorUtils_1.getDecoratorTextValue)(this.parameter, function (ident) { return ident.text === 'Param'; }) || parameterName,
+            name: (0, decoratorUtils_1.getDecoratorTextValue)(this.parameter, ident => ident.text === 'Param') || parameterName,
             parameterName: parameterName,
-            required: !parameter.questionToken,
+            required: this.isRequired(parameter),
             type: type
         };
-    };
-    ParameterGenerator.prototype.getContextParameter = function (parameter) {
-        var parameterName = parameter.name.text;
+    }
+    getContextParameter(parameter) {
+        const parameterName = parameter.name.text;
         return {
             description: this.getParameterDescription(parameter),
             in: 'context',
             name: parameterName,
             parameterName: parameterName,
-            required: !parameter.questionToken,
+            required: this.isRequired(parameter),
             type: { typeName: '' }
         };
-    };
-    ParameterGenerator.prototype.getFileParameter = function (parameter) {
-        var parameterName = parameter.name.text;
+    }
+    getFileParameter(parameter) {
+        const parameterName = parameter.name.text;
         if (!this.supportsBodyParameters(this.method)) {
-            throw new Error("FileParam can't support '".concat(this.getCurrentLocation(), "' method."));
+            throw new Error(`FileParam can't support '${this.getCurrentLocation()}' method.`);
         }
         return {
             description: this.getParameterDescription(parameter),
             in: 'formData',
-            name: (0, decoratorUtils_1.getDecoratorTextValue)(this.parameter, function (ident) { return ident.text === 'FileParam'; }) || parameterName,
+            name: (0, decoratorUtils_1.getDecoratorTextValue)(this.parameter, ident => ident.text === 'FileParam') || parameterName,
             parameterName: parameterName,
-            required: !parameter.questionToken,
+            required: this.isRequired(parameter),
             type: { typeName: 'file' }
         };
-    };
-    ParameterGenerator.prototype.getFilesParameter = function (parameter) {
-        var parameterName = parameter.name.text;
+    }
+    getFilesParameter(parameter) {
+        const parameterName = parameter.name.text;
         if (!this.supportsBodyParameters(this.method)) {
-            throw new Error("FilesParam can't support '".concat(this.getCurrentLocation(), "' method."));
+            throw new Error(`FilesParam can't support '${this.getCurrentLocation()}' method.`);
         }
         return {
             description: this.getParameterDescription(parameter),
             in: 'formData',
-            name: (0, decoratorUtils_1.getDecoratorTextValue)(this.parameter, function (ident) { return ident.text === 'FilesParam'; }) || parameterName,
+            name: (0, decoratorUtils_1.getDecoratorTextValue)(this.parameter, ident => ident.text === 'FilesParam') || parameterName,
             parameterName: parameterName,
-            required: !parameter.questionToken,
+            required: this.isRequired(parameter),
             type: { typeName: 'file' }
         };
-    };
-    ParameterGenerator.prototype.getFormParameter = function (parameter) {
-        var parameterName = parameter.name.text;
-        var type = this.getValidatedType(parameter);
+    }
+    getFormParameter(parameter) {
+        const parameterName = parameter.name.text;
+        const type = this.getValidatedType(parameter);
         if (!this.supportsBodyParameters(this.method)) {
-            throw new Error("Form can't support '".concat(this.getCurrentLocation(), "' method."));
+            throw new Error(`Form can't support '${this.getCurrentLocation()}' method.`);
         }
         return {
             description: this.getParameterDescription(parameter),
             in: 'formData',
-            name: (0, decoratorUtils_1.getDecoratorTextValue)(this.parameter, function (ident) { return ident.text === 'FormParam'; }) || parameterName,
+            name: (0, decoratorUtils_1.getDecoratorTextValue)(this.parameter, ident => ident.text === 'FormParam') || parameterName,
             parameterName: parameterName,
-            required: !parameter.questionToken && !parameter.initializer,
+            required: this.isRequired(parameter),
             type: type
         };
-    };
-    ParameterGenerator.prototype.getCookieParameter = function (parameter) {
-        var parameterName = parameter.name.text;
+    }
+    getCookieParameter(parameter) {
+        const parameterName = parameter.name.text;
         //        const type = this.getValidatedType(parameter);
         // if (!this.supportPathDataType(type)) {
         //     throw new Error(`Cookie can't support '${this.getCurrentLocation()}' method.`);
@@ -141,53 +129,53 @@ var ParameterGenerator = /** @class */ (function () {
         return {
             description: this.getParameterDescription(parameter),
             in: 'cookie',
-            name: (0, decoratorUtils_1.getDecoratorTextValue)(this.parameter, function (ident) { return ident.text === 'CookieParam'; }) || parameterName,
+            name: (0, decoratorUtils_1.getDecoratorTextValue)(this.parameter, ident => ident.text === 'CookieParam') || parameterName,
             parameterName: parameterName,
-            required: !parameter.questionToken && !parameter.initializer,
+            required: this.isRequired(parameter),
             type: { typeName: '' }
         };
-    };
-    ParameterGenerator.prototype.getBodyParameter = function (parameter) {
-        var parameterName = parameter.name.text;
-        var type = this.getValidatedType(parameter);
+    }
+    getBodyParameter(parameter) {
+        const parameterName = parameter.name.text;
+        const type = this.getValidatedType(parameter);
         if (!this.supportsBodyParameters(this.method)) {
-            throw new Error("Body can't support ".concat(this.method, " method"));
+            throw new Error(`Body can't support ${this.method} method`);
         }
         return {
             description: this.getParameterDescription(parameter),
             in: 'body',
             name: parameterName,
             parameterName: parameterName,
-            required: !parameter.questionToken && !parameter.initializer,
+            required: this.isRequired(parameter),
             type: type
         };
-    };
-    ParameterGenerator.prototype.getHeaderParameter = function (parameter) {
-        var parameterName = parameter.name.text;
-        var type = this.getValidatedType(parameter);
+    }
+    getHeaderParameter(parameter) {
+        const parameterName = parameter.name.text;
+        const type = this.getValidatedType(parameter);
         if (!this.supportPathDataType(type)) {
-            throw new InvalidParameterException("Parameter '".concat(parameterName, "' can't be passed as a header parameter in '").concat(this.getCurrentLocation(), "'."));
+            throw new InvalidParameterException(`Parameter '${parameterName}' can't be passed as a header parameter in '${this.getCurrentLocation()}'.`);
         }
         return {
             description: this.getParameterDescription(parameter),
             in: 'header',
-            name: (0, decoratorUtils_1.getDecoratorTextValue)(this.parameter, function (ident) { return ident.text === 'HeaderParam'; }) || parameterName,
+            name: (0, decoratorUtils_1.getDecoratorTextValue)(this.parameter, ident => ident.text === 'HeaderParam') || parameterName,
             parameterName: parameterName,
-            required: !parameter.questionToken && !parameter.initializer,
+            required: this.isRequired(parameter),
             type: type
         };
-    };
-    ParameterGenerator.prototype.getQueryParameter = function (parameter) {
-        var parameterName = parameter.name.text;
-        var parameterOptions = (0, decoratorUtils_1.getDecoratorOptions)(this.parameter, function (ident) { return ident.text === 'QueryParam'; }) || {};
-        var type = this.getValidatedType(parameter);
+    }
+    getQueryParameter(parameter) {
+        const parameterName = parameter.name.text;
+        const parameterOptions = (0, decoratorUtils_1.getDecoratorOptions)(this.parameter, ident => ident.text === 'QueryParam') || {};
+        let type = this.getValidatedType(parameter);
         if (!this.supportQueryDataType(type)) {
-            var arrayType = (0, resolveType_1.getCommonPrimitiveAndArrayUnionType)(parameter.type);
+            const arrayType = (0, resolveType_1.getCommonPrimitiveAndArrayUnionType)(parameter.type);
             if (arrayType && this.supportQueryDataType(arrayType)) {
                 type = arrayType;
             }
             else {
-                throw new InvalidParameterException("Parameter '".concat(parameterName, "' can't be passed as a query parameter in '").concat(this.getCurrentLocation(), "'."));
+                throw new InvalidParameterException(`Parameter '${parameterName}' can't be passed as a query parameter in '${this.getCurrentLocation()}'.`);
             }
         }
         return {
@@ -198,21 +186,25 @@ var ParameterGenerator = /** @class */ (function () {
             in: 'query',
             // maxItems: parameterOptions.maxItems,
             // minItems: parameterOptions.minItems,
-            name: (0, decoratorUtils_1.getDecoratorTextValue)(this.parameter, function (ident) { return ident.text === 'QueryParam'; }) || parameterName,
+            name: (0, decoratorUtils_1.getDecoratorTextValue)(this.parameter, ident => ident.text === 'QueryParam') || parameterName,
             parameterName: parameterName,
-            required: !parameter.questionToken && !parameter.initializer,
+            required: this.isRequired(parameter),
             type: type
         };
-    };
-    ParameterGenerator.prototype.getPathParameter = function (parameter) {
-        var parameterName = parameter.name.text;
-        var type = this.getValidatedType(parameter);
-        var pathName = (0, decoratorUtils_1.getDecoratorTextValue)(this.parameter, function (ident) { return ident.text === 'PathParam'; }) || parameterName;
+    }
+    isRequired(parameter) {
+        let isUndefinedUnion = parameter.type.kind === ts.SyntaxKind.UnionType && parameter.type.types.some(t => t.kind === ts.SyntaxKind.UndefinedKeyword);
+        return !parameter.questionToken && !parameter.initializer && !isUndefinedUnion;
+    }
+    getPathParameter(parameter) {
+        const parameterName = parameter.name.text;
+        const type = this.getValidatedType(parameter);
+        const pathName = (0, decoratorUtils_1.getDecoratorTextValue)(this.parameter, ident => ident.text === 'PathParam') || parameterName;
         if (!this.supportPathDataType(type)) {
-            throw new InvalidParameterException("Parameter '".concat(parameterName, ":").concat(type, "' can't be passed as a path parameter in '").concat(this.getCurrentLocation(), "'."));
+            throw new InvalidParameterException(`Parameter '${parameterName}:${type}' can't be passed as a path parameter in '${this.getCurrentLocation()}'.`);
         }
-        if ((!this.path.includes("{".concat(pathName, "}"))) && (!this.path.includes(":".concat(pathName)))) {
-            throw new Error("Parameter '".concat(parameterName, "' can't match in path: '").concat(this.path, "'"));
+        if ((!this.path.includes(`{${pathName}}`)) && (!this.path.includes(`:${pathName}`))) {
+            throw new Error(`Parameter '${parameterName}' can't match in path: '${this.path}'`);
         }
         return {
             description: this.getParameterDescription(parameter),
@@ -222,54 +214,48 @@ var ParameterGenerator = /** @class */ (function () {
             required: true,
             type: type
         };
-    };
-    ParameterGenerator.prototype.getParameterDescription = function (node) {
-        var symbol = metadataGenerator_1.MetadataGenerator.current.typeChecker.getSymbolAtLocation(node.name);
+    }
+    getParameterDescription(node) {
+        const symbol = metadataGenerator_1.MetadataGenerator.current.typeChecker.getSymbolAtLocation(node.name);
         if (symbol) {
-            var comments = symbol.getDocumentationComment(metadataGenerator_1.MetadataGenerator.current.typeChecker);
+            const comments = symbol.getDocumentationComment(metadataGenerator_1.MetadataGenerator.current.typeChecker);
             if (comments.length) {
                 return ts.displayPartsToString(comments);
             }
         }
         return '';
-    };
-    ParameterGenerator.prototype.supportsBodyParameters = function (method) {
-        return ['delete', 'post', 'put', 'patch'].some(function (m) { return m === method; });
-    };
-    ParameterGenerator.prototype.supportParameterDecorator = function (decoratorName) {
+    }
+    supportsBodyParameters(method) {
+        return ['delete', 'post', 'put', 'patch'].some(m => m === method);
+    }
+    supportParameterDecorator(decoratorName) {
         return ['HeaderParam', 'QueryParam', 'Param', 'FileParam',
             'PathParam', 'FilesParam', 'FormParam', 'CookieParam',
             'Context', 'ContextRequest', 'ContextResponse', 'ContextNext',
-            'ContextLanguage', 'ContextAccept'].some(function (d) { return d === decoratorName; });
-    };
-    ParameterGenerator.prototype.supportPathDataType = function (parameterType) {
-        return ['string', 'integer', 'long', 'float', 'double', 'date', 'datetime', 'buffer', 'boolean', 'enum'].find(function (t) { return t === parameterType.typeName; });
-    };
-    ParameterGenerator.prototype.supportQueryDataType = function (parameterType) {
+            'ContextLanguage', 'ContextAccept'].some(d => d === decoratorName);
+    }
+    supportPathDataType(parameterType) {
+        return ['string', 'integer', 'long', 'float', 'double', 'date', 'datetime', 'buffer', 'boolean', 'enum'].find(t => t === parameterType.typeName);
+    }
+    supportQueryDataType(parameterType) {
         // Copied from supportPathDataType and added 'array'. Not sure if all options apply to queries, but kept to avoid breaking change.
         return ['string', 'integer', 'long', 'float', 'double', 'date',
-            'datetime', 'buffer', 'boolean', 'enum', 'array'].find(function (t) { return t === parameterType.typeName; });
-    };
-    ParameterGenerator.prototype.getValidatedType = function (parameter) {
+            'datetime', 'buffer', 'boolean', 'enum', 'array'].find(t => t === parameterType.typeName);
+    }
+    getValidatedType(parameter) {
         if (!parameter.type) {
-            throw new Error("Parameter ".concat(parameter.name, " doesn't have a valid type assigned in '").concat(this.getCurrentLocation(), "'."));
+            throw new Error(`Parameter ${parameter.name} doesn't have a valid type assigned in '${this.getCurrentLocation()}'.`);
         }
         return (0, resolveType_1.resolveType)(parameter.type, this.genericTypeMap);
-    };
-    ParameterGenerator.prototype.getDefaultValue = function (initializer) {
+    }
+    getDefaultValue(initializer) {
         if (!initializer) {
             return;
         }
         return (0, resolveType_1.getLiteralValue)(initializer);
-    };
-    return ParameterGenerator;
-}());
-exports.ParameterGenerator = ParameterGenerator;
-var InvalidParameterException = /** @class */ (function (_super) {
-    __extends(InvalidParameterException, _super);
-    function InvalidParameterException() {
-        return _super !== null && _super.apply(this, arguments) || this;
     }
-    return InvalidParameterException;
-}(Error));
+}
+exports.ParameterGenerator = ParameterGenerator;
+class InvalidParameterException extends Error {
+}
 //# sourceMappingURL=parameterGenerator.js.map

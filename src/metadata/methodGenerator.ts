@@ -1,12 +1,12 @@
-import * as pathUtil from 'path';
-import * as ts from 'typescript';
-import { getDecorators } from '../utils/decoratorUtils';
-import { getJSDocDescription, getJSDocTag, isExistJSDocTag } from '../utils/jsDocUtils';
-import { normalizePath } from '../utils/pathUtils';
-import { EndpointGenerator } from './endpointGenerator';
-import { Method, ResponseData, ResponseType, Type } from './metadataGenerator';
-import { ParameterGenerator } from './parameterGenerator';
-import { resolveType } from './resolveType';
+import * as pathUtil from 'path'
+import * as ts from 'typescript'
+import { getDecorators } from '../utils/decoratorUtils'
+import { getJSDocDescription, getJSDocTag, isExistJSDocTag } from '../utils/jsDocUtils'
+import { normalizePath } from '../utils/pathUtils'
+import { EndpointGenerator } from './endpointGenerator'
+import { Method, ResponseData, ResponseType, Type } from './metadataGenerator'
+import { ParameterGenerator } from './parameterGenerator'
+import { resolveType } from './resolveType'
 
 export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
     private method: string;
@@ -72,7 +72,7 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
                 const methodId = this.node.name as ts.Identifier;
                 const controllerId = (this.node.parent as ts.ClassDeclaration).name as ts.Identifier;
                 const parameterId = p.name as ts.Identifier;
-                throw new Error(`Error generate parameter method: '${controllerId.text}.${methodId.text}' argument: ${parameterId.text} ${e}`);
+                throw new Error(`Error generate parameter method: '${controllerId.text}.${methodId.text}' argument: ${parameterId.text} ${e} \n ${e.stack}`);
             }
         }).filter(p => (p.in !== 'context') && (p.in !== 'cookie'));
 

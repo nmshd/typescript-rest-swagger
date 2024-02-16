@@ -1,20 +1,19 @@
 #!/usr/bin/env node
 'use strict';
 
-import { ArgumentParser } from 'argparse';
-import * as debug from 'debug';
-import * as fs from 'fs-extra-promise';
-import * as _ from 'lodash';
-import { isAbsolute, join } from 'path';
-import * as path from 'path';
-import * as ts from 'typescript';
-import * as YAML from 'yamljs';
-import { Config, Specification, SwaggerConfig } from './config';
-import { MetadataGenerator } from './metadata/metadataGenerator';
-import { SpecGenerator } from './swagger/generator';
+import { ArgumentParser } from 'argparse'
+import * as debug from 'debug'
+import * as fs from 'fs-extra-promise'
+import * as _ from 'lodash'
+import * as path from 'path'
+import { isAbsolute, join } from 'path'
+import * as ts from 'typescript'
+import * as YAML from 'yamljs'
+import { Config, Specification, SwaggerConfig } from './config'
+import { MetadataGenerator } from './metadata/metadataGenerator'
+import { SpecGenerator } from './swagger/generator'
 
 const debugLog = debug('typescript-rest-swagger');
-const packageJson = require(`../package.json`);
 
 const workingDir: string = process.cwd();
 const versionDefault = getPackageJsonValue('version');
@@ -23,35 +22,34 @@ const descriptionDefault = getPackageJsonValue('description');
 const licenseDefault = getPackageJsonValue('license');
 
 const parser = new ArgumentParser({
-    addHelp: true,
+    add_help: true,
     description: 'Typescript-REST Swagger tool',
-    version: packageJson.version
 });
 
-parser.addArgument(
-    ['-c', '--config'],
+parser.add_argument(
+    '-c', '--config',
     {
         help: 'The swagger config file (swagger.json or swagger.yml or swaggerCongig.js).'
     }
 );
 
-parser.addArgument(
-    ['-t', '--tsconfig'],
+parser.add_argument(
+    '-t', '--tsconfig',
     {
         action: 'storeTrue',
-        defaultValue: false,
+        default: false,
         help: 'Load tsconfig.json file',
     }
 );
 
-parser.addArgument(
-    ['-p', '--tsconfig_path'],
+parser.add_argument(
+    '-p', '--tsconfig_path',
     {
         help: 'The tsconfig file (tsconfig.json) path. Default to {cwd}/tsconfig.json.',
     }
 );
 
-const parameters = parser.parseArgs();
+const parameters = parser.parse_args();
 const config = getConfig(parameters.config);
 const compilerOptions = getCompilerOptions(parameters.tsconfig, parameters.tsconfig_path);
 debugLog('Starting Swagger generation tool');

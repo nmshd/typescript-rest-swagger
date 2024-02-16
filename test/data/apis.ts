@@ -5,9 +5,9 @@ import {
     PathParam, POST, PUT, QueryParam,
     Return,
     Security
-} from 'typescript-rest';
+} from 'typescript-rest'
 
-import * as swagger from '../../src/decorators';
+import * as swagger from '../../src/decorators'
 import { TestInterface } from './TestInterface'; // to test compilerOptions.paths
 
 export interface MytypeWithUnion {
@@ -75,7 +75,16 @@ export class MyService {
         @QueryParam('testOptional') test3?: string,
         @QueryParam('testEnum') test4?: TestEnum,
         @QueryParam('testNumericEnum') test5?: TestNumericEnum,
-        @QueryParam('testMixedEnum') test6?: TestMixedEnum
+        @QueryParam('testMixedEnum') test6?: TestMixedEnum,
+    ): Person {
+        return { name: 'OK' };
+    }
+
+    
+    @GET
+    @Path('secondpathundefined')
+    public test2undefined(
+        @QueryParam('testUndefined') test: string | undefined
     ): Person {
         return { name: 'OK' };
     }

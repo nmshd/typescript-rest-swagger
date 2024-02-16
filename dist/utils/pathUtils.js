@@ -5,8 +5,8 @@ function normalizePath(path) {
     if (!path) {
         return path;
     }
-    var parts = path.split('/');
-    parts = parts.map(function (part) { return part.startsWith(':') ? "{".concat(part.slice(1), "}") : part; });
+    let parts = path.split('/');
+    parts = parts.map(part => part.startsWith(':') ? `{${part.slice(1)}}` : part);
     return parts.join('/');
 }
 exports.normalizePath = normalizePath;

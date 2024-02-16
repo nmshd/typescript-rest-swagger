@@ -1,69 +1,66 @@
 #!/usr/bin/env node
 'use strict';
 Object.defineProperty(exports, "__esModule", { value: true });
-var argparse_1 = require("argparse");
-var debug = require("debug");
-var fs = require("fs-extra-promise");
-var _ = require("lodash");
-var path_1 = require("path");
-var path = require("path");
-var ts = require("typescript");
-var YAML = require("yamljs");
-var config_1 = require("./config");
-var metadataGenerator_1 = require("./metadata/metadataGenerator");
-var generator_1 = require("./swagger/generator");
-var debugLog = debug('typescript-rest-swagger');
-var packageJson = require("../package.json");
-var workingDir = process.cwd();
-var versionDefault = getPackageJsonValue('version');
-var nameDefault = getPackageJsonValue('name');
-var descriptionDefault = getPackageJsonValue('description');
-var licenseDefault = getPackageJsonValue('license');
-var parser = new argparse_1.ArgumentParser({
-    addHelp: true,
+const argparse_1 = require("argparse");
+const debug = require("debug");
+const fs = require("fs-extra-promise");
+const _ = require("lodash");
+const path = require("path");
+const path_1 = require("path");
+const ts = require("typescript");
+const YAML = require("yamljs");
+const config_1 = require("./config");
+const metadataGenerator_1 = require("./metadata/metadataGenerator");
+const generator_1 = require("./swagger/generator");
+const debugLog = debug('typescript-rest-swagger');
+const workingDir = process.cwd();
+const versionDefault = getPackageJsonValue('version');
+const nameDefault = getPackageJsonValue('name');
+const descriptionDefault = getPackageJsonValue('description');
+const licenseDefault = getPackageJsonValue('license');
+const parser = new argparse_1.ArgumentParser({
+    add_help: true,
     description: 'Typescript-REST Swagger tool',
-    version: packageJson.version
 });
-parser.addArgument(['-c', '--config'], {
+parser.add_argument('-c', '--config', {
     help: 'The swagger config file (swagger.json or swagger.yml or swaggerCongig.js).'
 });
-parser.addArgument(['-t', '--tsconfig'], {
+parser.add_argument('-t', '--tsconfig', {
     action: 'storeTrue',
-    defaultValue: false,
+    default: false,
     help: 'Load tsconfig.json file',
 });
-parser.addArgument(['-p', '--tsconfig_path'], {
+parser.add_argument('-p', '--tsconfig_path', {
     help: 'The tsconfig file (tsconfig.json) path. Default to {cwd}/tsconfig.json.',
 });
-var parameters = parser.parseArgs();
-var config = getConfig(parameters.config);
-var compilerOptions = getCompilerOptions(parameters.tsconfig, parameters.tsconfig_path);
+const parameters = parser.parse_args();
+const config = getConfig(parameters.config);
+const compilerOptions = getCompilerOptions(parameters.tsconfig, parameters.tsconfig_path);
 debugLog('Starting Swagger generation tool');
 debugLog('Compiler Options: %j', compilerOptions);
-var swaggerConfig = validateSwaggerConfig(config.swagger);
+const swaggerConfig = validateSwaggerConfig(config.swagger);
 debugLog('Swagger Config: %j', swaggerConfig);
 debugLog('Processing Services Metadata');
-var metadata = new metadataGenerator_1.MetadataGenerator(swaggerConfig.entryFile, compilerOptions, swaggerConfig.ignore).generate();
+const metadata = new metadataGenerator_1.MetadataGenerator(swaggerConfig.entryFile, compilerOptions, swaggerConfig.ignore).generate();
 debugLog('Generated Metadata: %j', metadata);
 new generator_1.SpecGenerator(metadata, swaggerConfig).generate()
-    .then(function () {
+    .then(() => {
     console.info('Generation completed.');
 })
-    .catch(function (err) {
-    console.error("Error generating swagger. ".concat(err));
+    .catch((err) => {
+    console.error(`Error generating swagger. ${err}`);
 });
 function getPackageJsonValue(key) {
     try {
-        var projectPackageJson = require("".concat(workingDir, "/package.json"));
+        const projectPackageJson = require(`${workingDir}/package.json`);
         return projectPackageJson[key] || '';
     }
     catch (err) {
         return '';
     }
 }
-function getConfig(configPath) {
-    if (configPath === void 0) { configPath = 'swagger.json'; }
-    var configFile = "".concat(workingDir, "/").concat(configPath);
+function getConfig(configPath = 'swagger.json') {
+    const configFile = `${workingDir}/${configPath}`;
     if (_.endsWith(configFile, '.yml') || _.endsWith(configFile, '.yaml')) {
         return YAML.load(configFile);
     }
@@ -96,13 +93,13 @@ function getCompilerOptions(loadTsconfig, tsconfigPath) {
     if (!loadTsconfig) {
         return {};
     }
-    var cwd = process.cwd();
-    var defaultTsconfigPath = (0, path_1.join)(cwd, 'tsconfig.json');
+    const cwd = process.cwd();
+    const defaultTsconfigPath = (0, path_1.join)(cwd, 'tsconfig.json');
     tsconfigPath = tsconfigPath
         ? getAbsolutePath(tsconfigPath, cwd)
         : defaultTsconfigPath;
     try {
-        var tsConfig = require(tsconfigPath);
+        const tsConfig = require(tsconfigPath);
         if (!tsConfig) {
             throw new Error('Invalid tsconfig');
         }
@@ -112,13 +109,13 @@ function getCompilerOptions(loadTsconfig, tsconfigPath) {
     }
     catch (err) {
         if (err.code === 'MODULE_NOT_FOUND') {
-            throw Error("No tsconfig file found at '".concat(tsconfigPath, "'"));
+            throw Error(`No tsconfig file found at '${tsconfigPath}'`);
         }
         else if (err.name === 'SyntaxError') {
-            throw Error("Invalid JSON syntax in tsconfig at '".concat(tsconfigPath, "': ").concat(err.message));
+            throw Error(`Invalid JSON syntax in tsconfig at '${tsconfigPath}': ${err.message}`);
         }
         else {
-            throw Error("Unhandled error encountered loading tsconfig '".concat(tsconfigPath, "': ").concat(err.message));
+            throw Error(`Unhandled error encountered loading tsconfig '${tsconfigPath}': ${err.message}`);
         }
     }
 }

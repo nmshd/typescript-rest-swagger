@@ -1,15 +1,15 @@
-import * as debug from 'debug';
-import * as fs from 'fs';
-import * as _ from 'lodash';
-import * as mkdirp from 'mkdirp';
-import * as pathUtil from 'path';
-import * as YAML from 'yamljs';
-import { Specification, SwaggerConfig } from '../config';
+import * as debug from 'debug'
+import * as fs from 'fs'
+import { mkdirp } from 'fs-extra-promise'
+import * as _ from 'lodash'
+import * as pathUtil from 'path'
+import * as YAML from 'yamljs'
+import { Specification, SwaggerConfig } from '../config'
 import {
     ArrayType, EnumerateType, Metadata, Method, ObjectType, Parameter,
     Property, ReferenceType, ResponseType, Type
-} from '../metadata/metadataGenerator';
-import { Swagger } from './swagger';
+} from '../metadata/metadataGenerator'
+import { Swagger } from './swagger'
 
 export class SpecGenerator {
     private debugger = debug('typescript-rest-swagger:spec-generator');

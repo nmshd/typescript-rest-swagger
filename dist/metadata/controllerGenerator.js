@@ -1,50 +1,34 @@
 "use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ControllerGenerator = void 0;
-var _ = require("lodash");
-var ts = require("typescript");
-var decoratorUtils_1 = require("../utils/decoratorUtils");
-var pathUtils_1 = require("../utils/pathUtils");
-var endpointGenerator_1 = require("./endpointGenerator");
-var methodGenerator_1 = require("./methodGenerator");
-var resolveType_1 = require("./resolveType");
-var ControllerGenerator = /** @class */ (function (_super) {
-    __extends(ControllerGenerator, _super);
-    function ControllerGenerator(node) {
-        var _this = _super.call(this, node, 'controllers') || this;
-        _this.genMethods = new Set();
-        _this.pathValue = (0, pathUtils_1.normalizePath)((0, decoratorUtils_1.getDecoratorTextValue)(node, function (decorator) { return decorator.text === 'Path'; }));
-        return _this;
+const _ = require("lodash");
+const ts = require("typescript");
+const decoratorUtils_1 = require("../utils/decoratorUtils");
+const pathUtils_1 = require("../utils/pathUtils");
+const endpointGenerator_1 = require("./endpointGenerator");
+const methodGenerator_1 = require("./methodGenerator");
+const resolveType_1 = require("./resolveType");
+class ControllerGenerator extends endpointGenerator_1.EndpointGenerator {
+    pathValue;
+    genMethods = new Set();
+    constructor(node) {
+        super(node, 'controllers');
+        this.pathValue = (0, pathUtils_1.normalizePath)((0, decoratorUtils_1.getDecoratorTextValue)(node, decorator => decorator.text === 'Path'));
     }
-    ControllerGenerator.prototype.isValid = function () {
+    isValid() {
         return !!this.pathValue || this.pathValue === '';
-    };
-    ControllerGenerator.prototype.generate = function () {
+    }
+    generate() {
         if (!this.node.parent) {
             throw new Error('Controller node doesn\'t have a valid parent source file.');
         }
         if (!this.node.name) {
             throw new Error('Controller node doesn\'t have a valid name.');
         }
-        var sourceFile = this.node.parent.getSourceFile();
+        const sourceFile = this.node.parent.getSourceFile();
         this.debugger('Generating Metadata for controller %s', this.getCurrentLocation());
         this.debugger('Controller path: %s', this.pathValue);
-        var controllerMetadata = {
+        const controllerMetadata = {
             consumes: this.getDecoratorValues('Consumes'),
             location: sourceFile.fileName,
             methods: this.buildMethods(),
@@ -57,13 +41,13 @@ var ControllerGenerator = /** @class */ (function (_super) {
         };
         this.debugger('Generated Metadata for controller %s: %j', this.getCurrentLocation(), controllerMetadata);
         return controllerMetadata;
-    };
-    ControllerGenerator.prototype.getCurrentLocation = function () {
+    }
+    getCurrentLocation() {
         return this.node.name.text;
-    };
-    ControllerGenerator.prototype.buildMethods = function () {
-        var result = [];
-        var targetClass = {
+    }
+    buildMethods() {
+        let result = [];
+        let targetClass = {
             type: this.node,
             typeArguments: null
         };
@@ -72,23 +56,21 @@ var ControllerGenerator = /** @class */ (function (_super) {
             targetClass = (0, resolveType_1.getSuperClass)(targetClass.type, targetClass.typeArguments);
         }
         return result;
-    };
-    ControllerGenerator.prototype.buildMethodsForClass = function (node, genericTypeMap) {
-        var _this = this;
+    }
+    buildMethodsForClass(node, genericTypeMap) {
         return node.members
-            .filter(function (m) { return (m.kind === ts.SyntaxKind.MethodDeclaration); })
-            .filter(function (m) { return !(0, decoratorUtils_1.isDecorator)(m, function (decorator) { return 'Hidden' === decorator.text; }); })
-            .map(function (m) { return new methodGenerator_1.MethodGenerator(m, _this.pathValue || '', genericTypeMap); })
-            .filter(function (generator) {
-            if (generator.isValid() && !_this.genMethods.has(generator.getMethodName())) {
-                _this.genMethods.add(generator.getMethodName());
+            .filter(m => (m.kind === ts.SyntaxKind.MethodDeclaration))
+            .filter(m => !(0, decoratorUtils_1.isDecorator)(m, decorator => 'Hidden' === decorator.text))
+            .map((m) => new methodGenerator_1.MethodGenerator(m, this.pathValue || '', genericTypeMap))
+            .filter(generator => {
+            if (generator.isValid() && !this.genMethods.has(generator.getMethodName())) {
+                this.genMethods.add(generator.getMethodName());
                 return true;
             }
             return false;
         })
-            .map(function (generator) { return generator.generate(); });
-    };
-    return ControllerGenerator;
-}(endpointGenerator_1.EndpointGenerator));
+            .map(generator => generator.generate());
+    }
+}
 exports.ControllerGenerator = ControllerGenerator;
 //# sourceMappingURL=controllerGenerator.js.map

@@ -1,53 +1,40 @@
 "use strict";
-var __extends = (this && this.__extends) || (function () {
-    var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf ||
-            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
-        return extendStatics(d, b);
-    };
-    return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MethodGenerator = void 0;
-var pathUtil = require("path");
-var decoratorUtils_1 = require("../utils/decoratorUtils");
-var jsDocUtils_1 = require("../utils/jsDocUtils");
-var pathUtils_1 = require("../utils/pathUtils");
-var endpointGenerator_1 = require("./endpointGenerator");
-var parameterGenerator_1 = require("./parameterGenerator");
-var resolveType_1 = require("./resolveType");
-var MethodGenerator = /** @class */ (function (_super) {
-    __extends(MethodGenerator, _super);
-    function MethodGenerator(node, controllerPath, genericTypeMap) {
-        var _this = _super.call(this, node, 'methods') || this;
-        _this.controllerPath = controllerPath;
-        _this.genericTypeMap = genericTypeMap;
-        _this.processMethodDecorators();
-        return _this;
+const pathUtil = require("path");
+const decoratorUtils_1 = require("../utils/decoratorUtils");
+const jsDocUtils_1 = require("../utils/jsDocUtils");
+const pathUtils_1 = require("../utils/pathUtils");
+const endpointGenerator_1 = require("./endpointGenerator");
+const parameterGenerator_1 = require("./parameterGenerator");
+const resolveType_1 = require("./resolveType");
+class MethodGenerator extends endpointGenerator_1.EndpointGenerator {
+    controllerPath;
+    genericTypeMap;
+    method;
+    path;
+    constructor(node, controllerPath, genericTypeMap) {
+        super(node, 'methods');
+        this.controllerPath = controllerPath;
+        this.genericTypeMap = genericTypeMap;
+        this.processMethodDecorators();
     }
-    MethodGenerator.prototype.isValid = function () {
+    isValid() {
         return !!this.method;
-    };
-    MethodGenerator.prototype.getMethodName = function () {
-        var identifier = this.node.name;
+    }
+    getMethodName() {
+        const identifier = this.node.name;
         return identifier.text;
-    };
-    MethodGenerator.prototype.generate = function () {
+    }
+    generate() {
         if (!this.isValid()) {
             throw new Error('This isn\'t a valid controller method.');
         }
         this.debugger('Generating Metadata for method %s', this.getCurrentLocation());
-        var identifier = this.node.name;
-        var type = (0, resolveType_1.resolveType)(this.node.type, this.genericTypeMap);
-        var responses = this.mergeResponses(this.getResponses(this.genericTypeMap), this.getMethodSuccessResponse(type));
-        var methodMetadata = {
+        const identifier = this.node.name;
+        const type = (0, resolveType_1.resolveType)(this.node.type, this.genericTypeMap);
+        const responses = this.mergeResponses(this.getResponses(this.genericTypeMap), this.getMethodSuccessResponse(type));
+        const methodMetadata = {
             consumes: this.getDecoratorValues('Consumes'),
             deprecated: (0, jsDocUtils_1.isExistJSDocTag)(this.node, 'deprecated'),
             description: (0, jsDocUtils_1.getJSDocDescription)(this.node),
@@ -64,73 +51,71 @@ var MethodGenerator = /** @class */ (function (_super) {
         };
         this.debugger('Generated Metadata for method %s: %j', this.getCurrentLocation(), methodMetadata);
         return methodMetadata;
-    };
-    MethodGenerator.prototype.getCurrentLocation = function () {
-        var methodId = this.node.name;
-        var controllerId = this.node.parent.name;
-        return "".concat(controllerId.text, ".").concat(methodId.text);
-    };
-    MethodGenerator.prototype.buildParameters = function () {
-        var _this = this;
+    }
+    getCurrentLocation() {
+        const methodId = this.node.name;
+        const controllerId = this.node.parent.name;
+        return `${controllerId.text}.${methodId.text}`;
+    }
+    buildParameters() {
         this.debugger('Processing method %s parameters.', this.getCurrentLocation());
-        var parameters = this.node.parameters.map(function (p) {
+        const parameters = this.node.parameters.map(p => {
             try {
-                var path = pathUtil.posix.join('/', (_this.controllerPath ? _this.controllerPath : ''), _this.path);
-                return new parameterGenerator_1.ParameterGenerator(p, _this.method, path, _this.genericTypeMap).generate();
+                const path = pathUtil.posix.join('/', (this.controllerPath ? this.controllerPath : ''), this.path);
+                return new parameterGenerator_1.ParameterGenerator(p, this.method, path, this.genericTypeMap).generate();
             }
             catch (e) {
-                var methodId = _this.node.name;
-                var controllerId = _this.node.parent.name;
-                var parameterId = p.name;
-                throw new Error("Error generate parameter method: '".concat(controllerId.text, ".").concat(methodId.text, "' argument: ").concat(parameterId.text, " ").concat(e));
+                const methodId = this.node.name;
+                const controllerId = this.node.parent.name;
+                const parameterId = p.name;
+                throw new Error(`Error generate parameter method: '${controllerId.text}.${methodId.text}' argument: ${parameterId.text} ${e} \n ${e.stack}`);
             }
-        }).filter(function (p) { return (p.in !== 'context') && (p.in !== 'cookie'); });
-        var bodyParameters = parameters.filter(function (p) { return p.in === 'body'; });
-        var formParameters = parameters.filter(function (p) { return p.in === 'formData'; });
+        }).filter(p => (p.in !== 'context') && (p.in !== 'cookie'));
+        const bodyParameters = parameters.filter(p => p.in === 'body');
+        const formParameters = parameters.filter(p => p.in === 'formData');
         if (bodyParameters.length > 1) {
-            throw new Error("Only one body parameter allowed in '".concat(this.getCurrentLocation(), "' method."));
+            throw new Error(`Only one body parameter allowed in '${this.getCurrentLocation()}' method.`);
         }
         if (bodyParameters.length > 0 && formParameters.length > 0) {
-            throw new Error("Choose either during @FormParam and @FileParam or body parameter  in '".concat(this.getCurrentLocation(), "' method."));
+            throw new Error(`Choose either during @FormParam and @FileParam or body parameter  in '${this.getCurrentLocation()}' method.`);
         }
         this.debugger('Parameters list for method %s: %j.', this.getCurrentLocation(), parameters);
         return parameters;
-    };
-    MethodGenerator.prototype.processMethodDecorators = function () {
-        var _this = this;
-        var httpMethodDecorators = (0, decoratorUtils_1.getDecorators)(this.node, function (decorator) { return _this.supportsPathMethod(decorator.text); });
+    }
+    processMethodDecorators() {
+        const httpMethodDecorators = (0, decoratorUtils_1.getDecorators)(this.node, decorator => this.supportsPathMethod(decorator.text));
         if (!httpMethodDecorators || !httpMethodDecorators.length) {
             return;
         }
         if (httpMethodDecorators.length > 1) {
-            throw new Error("Only one HTTP Method decorator in '".concat(this.getCurrentLocation, "' method is acceptable, Found: ").concat(httpMethodDecorators.map(function (d) { return d.text; }).join(', ')));
+            throw new Error(`Only one HTTP Method decorator in '${this.getCurrentLocation}' method is acceptable, Found: ${httpMethodDecorators.map(d => d.text).join(', ')}`);
         }
-        var methodDecorator = httpMethodDecorators[0];
+        const methodDecorator = httpMethodDecorators[0];
         this.method = methodDecorator.text.toLowerCase();
         this.debugger('Processing method %s decorators.', this.getCurrentLocation());
-        var pathDecorators = (0, decoratorUtils_1.getDecorators)(this.node, function (decorator) { return decorator.text === 'Path'; });
+        const pathDecorators = (0, decoratorUtils_1.getDecorators)(this.node, decorator => decorator.text === 'Path');
         if (pathDecorators && pathDecorators.length > 1) {
-            throw new Error("Only one Path decorator in '".concat(this.getCurrentLocation, "' method is acceptable, Found: ").concat(httpMethodDecorators.map(function (d) { return d.text; }).join(', ')));
+            throw new Error(`Only one Path decorator in '${this.getCurrentLocation}' method is acceptable, Found: ${httpMethodDecorators.map(d => d.text).join(', ')}`);
         }
         if (pathDecorators) {
-            var pathDecorator = pathDecorators[0];
-            this.path = pathDecorator ? "/".concat((0, pathUtils_1.normalizePath)(pathDecorator.arguments[0])) : '';
+            const pathDecorator = pathDecorators[0];
+            this.path = pathDecorator ? `/${(0, pathUtils_1.normalizePath)(pathDecorator.arguments[0])}` : '';
         }
         else {
             this.path = '';
         }
         this.debugger('Mapping endpoint %s %s', this.method, this.path);
-    };
-    MethodGenerator.prototype.getMethodSuccessResponse = function (type) {
-        var responseData = this.getMethodSuccessResponseData(type);
+    }
+    getMethodSuccessResponse(type) {
+        const responseData = this.getMethodSuccessResponseData(type);
         return {
             description: type.typeName === 'void' ? 'No content' : 'Ok',
             examples: this.getMethodSuccessExamples(),
             schema: responseData.type,
             status: responseData.status
         };
-    };
-    MethodGenerator.prototype.getMethodSuccessResponseData = function (type) {
+    }
+    getMethodSuccessResponseData(type) {
         switch (type.typeName) {
             case 'void': return { status: '204', type: type };
             case 'NewResource': return { status: '201', type: type.typeArgument || type };
@@ -141,24 +126,24 @@ var MethodGenerator = /** @class */ (function (_super) {
             case 'DownloadBinaryData': return { status: '200', type: { typeName: 'buffer' } };
             default: return { status: '200', type: type };
         }
-    };
-    MethodGenerator.prototype.getMethodSuccessExamples = function () {
-        var exampleDecorators = (0, decoratorUtils_1.getDecorators)(this.node, function (decorator) { return decorator.text === 'Example'; });
+    }
+    getMethodSuccessExamples() {
+        const exampleDecorators = (0, decoratorUtils_1.getDecorators)(this.node, decorator => decorator.text === 'Example');
         if (!exampleDecorators || !exampleDecorators.length) {
             return undefined;
         }
         if (exampleDecorators.length > 1) {
-            throw new Error("Only one Example decorator allowed in '".concat(this.getCurrentLocation, "' method."));
+            throw new Error(`Only one Example decorator allowed in '${this.getCurrentLocation}' method.`);
         }
-        var d = exampleDecorators[0];
-        var argument = d.arguments[0];
+        const d = exampleDecorators[0];
+        const argument = d.arguments[0];
         return this.getExamplesValue(argument);
-    };
-    MethodGenerator.prototype.mergeResponses = function (responses, defaultResponse) {
+    }
+    mergeResponses(responses, defaultResponse) {
         if (!responses || !responses.length) {
             return [defaultResponse];
         }
-        var index = responses.findIndex(function (resp) { return resp.status === defaultResponse.status; });
+        const index = responses.findIndex((resp) => resp.status === defaultResponse.status);
         if (index >= 0) {
             if (defaultResponse.examples && !responses[index].examples) {
                 responses[index].examples = defaultResponse.examples;
@@ -168,11 +153,10 @@ var MethodGenerator = /** @class */ (function (_super) {
             responses.push(defaultResponse);
         }
         return responses;
-    };
-    MethodGenerator.prototype.supportsPathMethod = function (method) {
-        return ['GET', 'POST', 'PATCH', 'DELETE', 'PUT', 'OPTIONS', 'HEAD'].some(function (m) { return m === method; });
-    };
-    return MethodGenerator;
-}(endpointGenerator_1.EndpointGenerator));
+    }
+    supportsPathMethod(method) {
+        return ['GET', 'POST', 'PATCH', 'DELETE', 'PUT', 'OPTIONS', 'HEAD'].some(m => m === method);
+    }
+}
 exports.MethodGenerator = MethodGenerator;
 //# sourceMappingURL=methodGenerator.js.map

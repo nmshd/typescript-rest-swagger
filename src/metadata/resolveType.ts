@@ -10,6 +10,7 @@ syntaxKindMap[ts.SyntaxKind.NumberKeyword] = 'number';
 syntaxKindMap[ts.SyntaxKind.StringKeyword] = 'string';
 syntaxKindMap[ts.SyntaxKind.BooleanKeyword] = 'boolean';
 syntaxKindMap[ts.SyntaxKind.VoidKeyword] = 'void';
+syntaxKindMap[ts.SyntaxKind.UndefinedKeyword] = 'undefined';
 
 const localReferenceTypeCache: { [typeName: string]: ReferenceType } = {};
 const inProgressTypes: { [typeName: string]: boolean } = {};
@@ -189,6 +190,10 @@ function getUnionType(typeNode: ts.TypeNode) {
     const union = typeNode as ts.UnionTypeNode;
     let baseType: any = null;
     let isObject = false;
+    const types = union.types.filter(t => t.kind !== ts.SyntaxKind.UndefinedKeyword);
+    if (types.length === 1) {
+        return resolveType(types[0]);
+    }
     union.types.forEach(type => {
         if (baseType === null) {
             baseType = type;
@@ -706,7 +711,7 @@ function resolveTypeArguments(node: ts.ClassDeclaration, typeArguments?: Readonl
 export function getCommonPrimitiveAndArrayUnionType(typeNode?: ts.TypeNode): Type | null {
     if (typeNode && typeNode.kind === ts.SyntaxKind.UnionType) {
         const union = typeNode as ts.UnionTypeNode;
-        const types = union.types.map(t => resolveType(t));
+        const types = union.types.map(t => resolveType(t)).filter(t => t.typeName !== 'undefined');
         const arrType = types.find(t => t.typeName === 'array') as ArrayType | undefined;
         const primitiveType = types.find(t => t.typeName !== 'array');
 

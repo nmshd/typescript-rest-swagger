@@ -17,6 +17,7 @@ export declare class ParameterGenerator {
     private getBodyParameter;
     private getHeaderParameter;
     private getQueryParameter;
+    isRequired(parameter: ts.ParameterDeclaration): boolean;
     private getPathParameter;
     private getParameterDescription;
     private supportsBodyParameters;

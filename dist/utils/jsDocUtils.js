@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getFirstMatchingJSDocTagName = exports.isExistJSDocTag = exports.getJSDocTag = exports.getJSDocDescription = void 0;
 function getJSDocDescription(node) {
-    var jsDocs = node.jsDoc;
+    const jsDocs = node.jsDoc;
     if (!jsDocs || !jsDocs.length) {
         return '';
     }
@@ -10,7 +10,7 @@ function getJSDocDescription(node) {
 }
 exports.getJSDocDescription = getJSDocDescription;
 function getJSDocTag(node, tagName) {
-    var tags = getJSDocTags(node, tagName);
+    const tags = getJSDocTags(node, tagName);
     if (!tags || !tags.length) {
         return undefined;
     }
@@ -18,7 +18,7 @@ function getJSDocTag(node, tagName) {
 }
 exports.getJSDocTag = getJSDocTag;
 function isExistJSDocTag(node, tagName) {
-    var tags = getJSDocTags(node, tagName);
+    const tags = getJSDocTags(node, tagName);
     if (!tags || !tags.length) {
         return false;
     }
@@ -26,10 +26,10 @@ function isExistJSDocTag(node, tagName) {
 }
 exports.isExistJSDocTag = isExistJSDocTag;
 function getJSDocTags(node, tagName) {
-    return getMatchingJSDocTags(node, function (t) { return t.tagName.text === tagName; });
+    return getMatchingJSDocTags(node, t => t.tagName.text === tagName);
 }
 function getFirstMatchingJSDocTagName(node, isMatching) {
-    var tags = getMatchingJSDocTags(node, isMatching);
+    const tags = getMatchingJSDocTags(node, isMatching);
     if (!tags || !tags.length) {
         return undefined;
     }
@@ -37,11 +37,11 @@ function getFirstMatchingJSDocTagName(node, isMatching) {
 }
 exports.getFirstMatchingJSDocTagName = getFirstMatchingJSDocTagName;
 function getMatchingJSDocTags(node, isMatching) {
-    var jsDocs = node.jsDoc;
+    const jsDocs = node.jsDoc;
     if (!jsDocs || !jsDocs.length) {
         return undefined;
     }
-    var jsDoc = jsDocs[0];
+    const jsDoc = jsDocs[0];
     if (!jsDoc.tags) {
         return undefined;
     }

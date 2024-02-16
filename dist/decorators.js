@@ -25,7 +25,7 @@ exports.IsDouble = exports.IsFloat = exports.IsLong = exports.IsInt = exports.Hi
  * @param example An optional example of response to be added to method documentation.
  */
 function Response(name, description, example) {
-    return function () { return; };
+    return () => { return; };
 }
 exports.Response = Response;
 /**
@@ -46,7 +46,7 @@ exports.Response = Response;
  * @param example The example returned object
  */
 function Example(example) {
-    return function () { return; };
+    return () => { return; };
 }
 exports.Example = Example;
 /**
@@ -63,41 +63,29 @@ exports.Example = Example;
  * ```
  * @param values a list of tags
  */
-function Tags() {
-    var values = [];
-    for (var _i = 0; _i < arguments.length; _i++) {
-        values[_i] = arguments[_i];
-    }
-    return function () { return; };
+function Tags(...values) {
+    return () => { return; };
 }
 exports.Tags = Tags;
 /**
  * Document the method or class comsumes property in generated swagger docs
  */
-function Consumes() {
-    var values = [];
-    for (var _i = 0; _i < arguments.length; _i++) {
-        values[_i] = arguments[_i];
-    }
-    return function () { return; };
+function Consumes(...values) {
+    return () => { return; };
 }
 exports.Consumes = Consumes;
 /**
  * Document the method or class produces property in generated swagger docs
  */
-function Produces() {
-    var values = [];
-    for (var _i = 0; _i < arguments.length; _i++) {
-        values[_i] = arguments[_i];
-    }
-    return function () { return; };
+function Produces(...values) {
+    return () => { return; };
 }
 exports.Produces = Produces;
 /**
  * Document the method or class produces property in generated swagger docs
  */
 function Hidden() {
-    return function () { return; };
+    return () => { return; };
 }
 exports.Hidden = Hidden;
 /**
