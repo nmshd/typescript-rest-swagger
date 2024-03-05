@@ -10,3 +10,4 @@ export declare function getSuperClass(node: ts.ClassDeclaration, typeArguments?:
  */
 export declare function getCommonPrimitiveAndArrayUnionType(typeNode?: ts.TypeNode): Type | null;
 export declare function getLiteralValue(expression: ts.Expression): any;
+//# sourceMappingURL=resolveType.d.ts.map

@@ -104,3 +104,4 @@ export interface ResponseData {
     status: string;
     type: Type;
 }
+//# sourceMappingURL=metadataGenerator.d.ts.map

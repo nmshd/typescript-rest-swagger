@@ -84,3 +84,4 @@ export declare function IsFloat(target: any, propertyKey: string, parameterIndex
  * This is the default for `number` types without a specifying decorator.
  */
 export declare function IsDouble(target: any, propertyKey: string, parameterIndex?: number): void;
+//# sourceMappingURL=decorators.d.ts.map

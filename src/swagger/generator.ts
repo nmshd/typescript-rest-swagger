@@ -392,9 +392,9 @@ export class SpecGenerator {
             }, null);
         }
 
-        const enumValues = enumType.enumMembers.map(member => member as string) as [string];
+        const enumValues = enumType.enumMembers.map(member => member as string) as Array<string>;
         return {
-            enum: enumType.enumMembers.map(member => member as string) as [string],
+            enum: enumType.enumMembers.map(member => member as string) as Array<string>,
             type: getDerivedTypeFromValues(enumValues),
         };
     }

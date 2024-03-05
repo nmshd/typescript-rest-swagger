@@ -90,12 +90,12 @@ export interface SwaggerConfig {
     /**
      * Default consumes property for the entire API
      */
-    consumes?: [string];
+    consumes?: Array<string>;
 
     /**
      * Default produces property for the entire API
      */
-    produces?: [string];
+    produces?: Array<string>;
 
     /**
      * Default collectionFormat property for query parameters of array type.
@@ -106,5 +106,5 @@ export interface SwaggerConfig {
     /**
      * Directory to ignore during TypeScript metadata scan
      */
-    ignore?: [string];
+    ignore?: Array<string>;
 }

@@ -30,3 +30,4 @@ export declare class SpecGenerator {
     private getSwaggerTypeForEnumType;
     private getSwaggerTypeForReferenceType;
 }
+//# sourceMappingURL=generator.d.ts.map

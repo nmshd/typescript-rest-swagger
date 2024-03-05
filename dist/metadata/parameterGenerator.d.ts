@@ -27,3 +27,4 @@ export declare class ParameterGenerator {
     private getValidatedType;
     private getDefaultValue;
 }
+//# sourceMappingURL=parameterGenerator.d.ts.map

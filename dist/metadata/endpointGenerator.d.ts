@@ -16,3 +16,4 @@ export declare abstract class EndpointGenerator<T extends ts.Node> {
     protected getResponses(genericTypeMap?: Map<String, ts.TypeNode>): Array<ResponseType>;
     protected abstract getCurrentLocation(): string;
 }
+//# sourceMappingURL=endpointGenerator.d.ts.map

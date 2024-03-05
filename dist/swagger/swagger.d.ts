@@ -69,7 +69,7 @@ export declare namespace Swagger {
         options?: Operation;
         head?: Operation;
         patch?: Operation;
-        parameters?: [Parameter];
+        parameters?: Array<Parameter>;
     }
     interface Operation {
         responses: {
@@ -79,13 +79,13 @@ export declare namespace Swagger {
         description?: string;
         externalDocs?: ExternalDocs;
         operationId?: string;
-        produces?: [string];
-        consumes?: [string];
-        parameters?: [Parameter];
-        schemes?: [string];
+        produces?: Array<string>;
+        consumes?: Array<string>;
+        parameters?: Array<Parameter>;
+        schemes?: Array<string>;
         deprecated?: boolean;
-        security?: [Security];
-        tags?: [string];
+        security?: Array<Security>;
+        tags?: Array<string>;
     }
     interface Response {
         description: string;
@@ -115,13 +115,13 @@ export declare namespace Swagger {
         uniqueItems?: boolean;
         maxProperties?: number;
         minProperties?: number;
-        enum?: [string];
+        enum?: Array<string>;
         type?: string;
-        items?: Schema | [Schema];
+        items?: Schema | Array<Schema>;
     }
     interface Schema extends BaseSchema {
         $ref?: string;
-        allOf?: [Schema];
+        allOf?: Array<Schema>;
         additionalProperties?: boolean | {
             [ref: string]: string;
         };
@@ -162,16 +162,16 @@ export declare namespace Swagger {
     }
     interface OAuth2PasswordSecurity extends BaseOAuthSecuirty {
         tokenUrl: string;
-        scopes?: [OAuthScope];
+        scopes?: Array<OAuthScope>;
     }
     interface OAuth2ApplicationSecurity extends BaseOAuthSecuirty {
         tokenUrl: string;
-        scopes?: [OAuthScope];
+        scopes?: Array<OAuthScope>;
     }
     interface OAuth2AccessCodeSecurity extends BaseOAuthSecuirty {
         tokenUrl: string;
         authorizationUrl: string;
-        scopes?: [OAuthScope];
+        scopes?: Array<OAuthScope>;
     }
     interface OAuthScope {
         [scopeName: string]: string;
@@ -183,9 +183,9 @@ export declare namespace Swagger {
         externalDocs?: ExternalDocs;
         host?: string;
         basePath?: string;
-        schemes?: [string];
-        consumes?: [string];
-        produces?: [string];
+        schemes?: Array<string>;
+        consumes?: Array<string>;
+        produces?: Array<string>;
         paths: {
             [pathName: string]: Path;
         };
@@ -198,10 +198,11 @@ export declare namespace Swagger {
         responses?: {
             [responseName: string]: Response;
         };
-        security?: [Security];
+        security?: Array<Security>;
         securityDefinitions?: {
             [securityDefinitionName: string]: Security;
         };
-        tags?: [Tag];
+        tags?: Array<Tag>;
     }
 }
+//# sourceMappingURL=swagger.d.ts.map

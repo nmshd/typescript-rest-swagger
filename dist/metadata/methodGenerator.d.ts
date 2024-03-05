@@ -19,3 +19,4 @@ export declare class MethodGenerator extends EndpointGenerator<ts.MethodDeclarat
     private mergeResponses;
     private supportsPathMethod;
 }
+//# sourceMappingURL=methodGenerator.d.ts.map

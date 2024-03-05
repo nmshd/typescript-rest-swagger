@@ -11,3 +11,4 @@ export declare class ControllerGenerator extends EndpointGenerator<ts.ClassDecla
     private buildMethods;
     private buildMethodsForClass;
 }
+//# sourceMappingURL=controllerGenerator.d.ts.map
