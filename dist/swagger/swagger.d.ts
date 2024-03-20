@@ -58,7 +58,7 @@ export declare namespace Swagger {
         type: string;
         collectionFormat?: CollectionFormat;
     }
-    type CollectionFormat = 'csv' | 'ssv' | 'tsv' | 'pipes' | 'multi';
+    type CollectionFormat = "csv" | "ssv" | "tsv" | "pipes" | "multi";
     type Parameter = BodyParameter | FormDataParameter | QueryParameter | PathParameter | HeaderParameter;
     interface Path {
         $ref?: string;
@@ -90,6 +90,11 @@ export declare namespace Swagger {
     interface Response {
         description: string;
         schema?: Schema;
+        content?: {
+            [mediaType: string]: {
+                schema: Schema;
+            };
+        };
         headers?: {
             [headerName: string]: Header;
         };

@@ -13,7 +13,7 @@
     "generation"
   ],
   "main": "./dist/index.js",
-  "typings": "./dist/index.d.ts",
+  "types": "./dist/index.d.ts",
   "scripts": {
     "start": "tsc -w",
     "build": "npm run clean && tsc",
@@ -27,6 +27,7 @@
   "author": "Thiago da Rosa de Bustamante <trbustamante@gmail.com>",
   "license": "MIT",
   "dependencies": {
+    "@apidevtools/swagger-parser": "^10.1.0",
     "argparse": "^2.0.1",
     "debug": "^4.3.4",
     "fs-extra-promise": "^1.0.1",
@@ -37,7 +38,7 @@
     "mkdirp": "^3.0.1",
     "path": "^0.12.7",
     "swagger2openapi": "^7.0.8",
-    "typescript": "^5.3.3",
+    "typescript": "^5.4.2",
     "typescript-rest": "^3.0.4",
     "yamljs": "^0.3.0"
   },
