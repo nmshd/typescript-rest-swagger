@@ -178,10 +178,14 @@ export interface EnumerateType extends Type {
     enumMembers: Array<string>;
 }
 
+export interface UnionType extends Type {
+    types: Array<Type>;
+}
+
 export interface ReferenceType extends Type {
     description: string;
     properties: Array<Property>;
-    additionalProperties?: Array<Property>;
+    // additionalProperties?: Array<Property>;
 }
 
 export interface ObjectType extends Type {

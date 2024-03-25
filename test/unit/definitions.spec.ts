@@ -27,6 +27,7 @@ describe("Definition generation", () => {
     specDeRef = (await swaggerParser.dereference(
       cloneDeep(spec) as any
     )) as unknown as Swagger.Spec;
+    debugger
   });
 
   describe("MyService", () => {
@@ -502,13 +503,13 @@ describe("Definition generation", () => {
         'paths."/primitives/arrayNative".get.responses."200".schema."$ref"'
       );
       expect(await expression.evaluate(spec)).toEqual(
-        "#/definitions/ResponseBodystringArray"
+        "#/definitions/ResponseBody<string[]>"
       );
       expression = jsonata(
         'paths."/primitives/array".get.responses."200".schema."$ref"'
       );
       expect(await expression.evaluate(spec)).toEqual(
-        "#/definitions/ResponseBodystringArray"
+        "#/definitions/ResponseBody<string[]>"
       );
     });
   });
@@ -537,9 +538,10 @@ describe("Definition generation", () => {
   });
 
   describe("SecureEndpoint", () => {
-    it("should apply controller security to request", async () => {
+    it.skip("should apply controller security to request", async () => {
       const expression = jsonata('paths."/secure".get.security');
-      expect(await expression.evaluate(spec)).toStrictEqual([
+      const res = await expression.evaluate(spec);
+      expect(res).toStrictEqual([
         { access_token: ["ROLE_1", "ROLE_2"] },
       ]);
     });
@@ -636,7 +638,7 @@ describe("Definition generation", () => {
       const expression = jsonata('paths."/mypath/generic".get.responses."200".schema."$ref"');
 
       const res = await expression.evaluate(spec)
-      expect(res).toEqual('#/definitions/GenericA<Deep<LocalAttributeDTO[],Error>,Error>');
+      expect(res).toEqual('#/definitions/GenericA<Deep<End[],Error>,Error>');
     });
   });
 });

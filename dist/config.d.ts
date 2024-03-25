@@ -1,3 +1,4 @@
+import { OpenAPIV3 } from "openapi-types";
 export interface Config {
     /**
      * Swagger generation configuration object
@@ -28,7 +29,7 @@ export interface SwaggerConfig {
     /**
      * API host, expressTemplate.g. localhost:3000 or https://myapi.com
      */
-    host?: string;
+    servers?: OpenAPIV3.ServerObject[];
     /**
      * API version number; defaults to npm package version
      */
@@ -60,19 +61,7 @@ export interface SwaggerConfig {
      * specification. This does not enforce the security schemes on the operations
      * and only serves to provide the relevant details for each scheme.
      */
-    securityDefinitions?: {
-        [name: string]: {
-            type: string;
-            name?: string;
-            authorizationUrl?: string;
-            tokenUrl?: string;
-            flow?: string;
-            in?: string;
-            scopes?: {
-                [scopeName: string]: string;
-            };
-        };
-    };
+    securityDefinitions?: OpenAPIV3.SecurityRequirementObject[];
     /**
      * Default consumes property for the entire API
      */

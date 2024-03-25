@@ -1,6 +1,6 @@
-import { SwaggerConfig } from '../config';
-import { Metadata } from '../metadata/metadataGenerator';
-import { Swagger } from './swagger';
+import { SwaggerConfig } from "../config";
+import { Metadata } from "../metadata/metadataGenerator";
+import { Swagger } from "./swagger";
 export declare class SpecGenerator {
     private readonly metadata;
     private readonly config;
@@ -8,8 +8,7 @@ export declare class SpecGenerator {
     constructor(metadata: Metadata, config: SwaggerConfig);
     generate(): Promise<void>;
     getSwaggerSpec(): Swagger.Spec;
-    getOpenApiSpec(): Promise<any>;
-    private convertToOpenApiSpec;
+    getOpenApiSpec(): Swagger.Spec;
     private buildDefinitions;
     private buildPaths;
     private buildPathMethod;
@@ -18,10 +17,8 @@ export declare class SpecGenerator {
     private supportsBodyParameters;
     private buildParameter;
     private buildProperties;
-    private buildAdditionalProperties;
     private buildOperation;
     private getMimeType;
-    private handleMethodProduces;
     private getOperationId;
     private getSwaggerType;
     private getSwaggerTypeForPrimitiveType;

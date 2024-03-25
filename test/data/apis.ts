@@ -1,17 +1,17 @@
 "use strict";
 
 import {
-    Accept,
-    DELETE,
-    FormParam,
-    GET,
-    POST,
-    PUT,
-    Path,
-    PathParam,
-    QueryParam,
-    Return,
-    Security,
+  Accept,
+  DELETE,
+  FormParam,
+  GET,
+  POST,
+  PUT,
+  Path,
+  PathParam,
+  QueryParam,
+  Return,
+  Security,
 } from "typescript-rest";
 
 import * as swagger from "../../src/decorators";
@@ -38,16 +38,11 @@ interface Person {
   address?: Address;
 }
 
-interface LocalAttributeDTO {
+interface End {
   id: string;
-  parentId?: string;
-  createdAt: string;
-  content: string;
-  succeeds?: string;
-  succeededBy?: string;
-  shareInfo?: string;
-  deletionInfo?: string;
 }
+
+export interface EndArrayRenamed extends Array<End> {}
 
 interface Error {
   text: string;
@@ -114,14 +109,30 @@ export class MyService {
 
   @GET
   @Path("generic")
-  public testGeneric(): GenericA<Deep<LocalAttributeDTO[], Error>, Error> {
+  public testGeneric(): GenericA<Deep<End[], Error>, Error> {
     return {
       deep: {
-        data: [{
-          id: "1",
-          createdAt: "2",
-          content: "3",
-        }],
+        data: [
+          {
+            id: "1",
+          },
+        ],
+        error: { text: "error" },
+      },
+      error: { text: "error" },
+    };
+  }
+
+  @GET
+  @Path("generic2")
+  public testGeneric2(): GenericA<Deep<EndArrayRenamed, Error>, Error> {
+    return {
+      deep: {
+        data: [
+          {
+            id: "1",
+          },
+        ],
         error: { text: "error" },
       },
       error: { text: "error" },
@@ -325,6 +336,15 @@ export class DerivedEndpoint2 {
   }
 }
 
+type SomeDeepType = {
+  name:string;
+  value: {key:string};
+}
+type SomeDeepType2 = {
+  name:string;
+  value: {key:string};
+}
+
 // tslint:disable-next-line: interface-over-type-literal
 export type SimpleHelloType = {
   /**
@@ -332,6 +352,10 @@ export type SimpleHelloType = {
    */
   greeting: string;
   arrayOfSomething: Array<Something>;
+  arrayOfUnion: Array<string | number>;
+  // arrayOfUnion2: (string | number)[];
+  union: SomeDeepType2 | SomeDeepType;
+  arrayOfUnion3: Array<SomeDeepType2 | SomeDeepType>;
 
   /**
    * Description for profile
@@ -341,6 +365,9 @@ export type SimpleHelloType = {
      * Description for profile name
      */
     name: string;
+    name2: "value";
+    name3: { value: "value1" | "value2" };
+    name4: 2;
   };
 
   comparePassword: (

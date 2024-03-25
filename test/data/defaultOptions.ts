@@ -5,7 +5,11 @@ export function getDefaultOptions(): SwaggerConfig {
     collectionFormat: 'multi',
     description: 'Description of a test API',
     entryFile: '',
-    host: 'localhost:3000',
+    servers: [
+      {
+        url: 'http://localhost:3000'
+      }
+    ],
     license: 'MIT',
     name: 'Test API',
     outputDirectory: '',
