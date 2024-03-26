@@ -25,6 +25,7 @@ export declare class ParameterGenerator {
     private supportPathDataType;
     private supportQueryDataType;
     private getValidatedType;
+    private newResolveType;
     private getDefaultValue;
 }
 //# sourceMappingURL=parameterGenerator.d.ts.map

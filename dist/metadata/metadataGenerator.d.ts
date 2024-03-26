@@ -1,4 +1,4 @@
-import * as ts from 'typescript';
+import * as ts from "typescript";
 export declare class MetadataGenerator {
     private readonly ignorePaths?;
     static current: MetadataGenerator;

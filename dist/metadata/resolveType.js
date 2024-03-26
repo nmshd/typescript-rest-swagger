@@ -43,9 +43,9 @@ function resolveType(typeNode, genericTypeMap) {
     if (typeNode.kind === ts.SyntaxKind.UnionType) {
         return getUnionType(typeNode);
     }
-    // if (typeNode.kind === ts.SyntaxKind.ParenthesizedType) {
-    //   return getUnionType((typeNode as ts.ParenthesizedTypeNode).type);
-    // }
+    if (typeNode.kind === ts.SyntaxKind.ParenthesizedType) {
+        return getUnionType(typeNode.type);
+    }
     if (typeNode.kind !== ts.SyntaxKind.TypeReference) {
         throw new Error(`Unknown type: ${ts.SyntaxKind[typeNode.kind]}`);
     }
@@ -337,7 +337,7 @@ function getTypeName(typeName, genericTypes) {
     if (!genericTypes || !genericTypes.length) {
         return typeName;
     }
-    return `${typeName}<${genericTypes.map((t) => getAnyTypeName(t)).join(",")}>`;
+    return `${typeName}-${genericTypes.map((t) => getAnyTypeName(t)).join(".")}-`;
 }
 function getAnyTypeName(typeNode) {
     const primitiveType = syntaxKindMap[typeNode.kind];
@@ -346,7 +346,7 @@ function getAnyTypeName(typeNode) {
     }
     if (typeNode.kind === ts.SyntaxKind.ArrayType) {
         const arrayType = typeNode;
-        return getAnyTypeName(arrayType.elementType) + "[]";
+        return getAnyTypeName(arrayType.elementType) + "_Array";
     }
     if (typeNode.kind === ts.SyntaxKind.UnionType ||
         typeNode.kind === ts.SyntaxKind.AnyKeyword) {
@@ -359,12 +359,12 @@ function getAnyTypeName(typeNode) {
     try {
         const typeName = typeReference.typeName.text;
         if (typeName === "Array") {
-            return getAnyTypeName(typeReference.typeArguments[0]) + "[]";
+            return getAnyTypeName(typeReference.typeArguments[0]) + "_Array";
         }
         if (typeReference.typeArguments && typeReference.typeArguments.length > 0) {
-            return `${typeName}<${typeReference.typeArguments
+            return `${typeName}-${typeReference.typeArguments
                 .map((t) => getAnyTypeName(t))
-                .join(",")}>`;
+                .join(".")}-`;
         }
         return typeName;
     }

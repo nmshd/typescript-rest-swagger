@@ -35,6 +35,7 @@ export function resolveType(
   if (!typeNode) {
     return { typeName: "void" };
   }
+
   const primitiveType = getPrimitiveType(typeNode);
   if (primitiveType) {
     return primitiveType;
@@ -70,9 +71,9 @@ export function resolveType(
     return getUnionType(typeNode);
   }
 
-  // if (typeNode.kind === ts.SyntaxKind.ParenthesizedType) {
-  //   return getUnionType((typeNode as ts.ParenthesizedTypeNode).type);
-  // }
+  if (typeNode.kind === ts.SyntaxKind.ParenthesizedType) {
+    return getUnionType((typeNode as ts.ParenthesizedTypeNode).type);
+  }
 
   if (typeNode.kind !== ts.SyntaxKind.TypeReference) {
     throw new Error(`Unknown type: ${ts.SyntaxKind[typeNode.kind]}`);
@@ -279,7 +280,7 @@ function getUnionType(typeNode: ts.TypeNode) {
     if (baseType === null) {
       baseType = type;
     }
-    const prim = getPrimitiveType(type)
+    const prim = getPrimitiveType(type);
     if (baseType.kind !== type.kind || !prim) {
       isObject = true;
     }
@@ -288,7 +289,7 @@ function getUnionType(typeNode: ts.TypeNode) {
     const mapedTypes = union.types.map((type) => {
       return resolveType(type);
     });
-    return {typeName:"",types:mapedTypes} as UnionType
+    return { typeName: "", types: mapedTypes } as UnionType;
   }
   return {
     enumMembers: union.types.map((type, index) => {
@@ -457,7 +458,7 @@ function getTypeName(
   if (!genericTypes || !genericTypes.length) {
     return typeName;
   }
-  return `${typeName}<${genericTypes.map((t) => getAnyTypeName(t)).join(",")}>`;
+  return `${typeName}-${genericTypes.map((t) => getAnyTypeName(t)).join(".")}-`;
 }
 
 function getAnyTypeName(typeNode: ts.TypeNode): string {
@@ -468,7 +469,7 @@ function getAnyTypeName(typeNode: ts.TypeNode): string {
 
   if (typeNode.kind === ts.SyntaxKind.ArrayType) {
     const arrayType = typeNode as ts.ArrayTypeNode;
-    return getAnyTypeName(arrayType.elementType) + "[]";
+    return getAnyTypeName(arrayType.elementType) + "_Array";
   }
 
   if (
@@ -486,12 +487,12 @@ function getAnyTypeName(typeNode: ts.TypeNode): string {
   try {
     const typeName = (typeReference.typeName as ts.Identifier).text;
     if (typeName === "Array") {
-      return getAnyTypeName(typeReference.typeArguments[0]) + "[]";
+      return getAnyTypeName(typeReference.typeArguments[0]) + "_Array";
     }
     if (typeReference.typeArguments && typeReference.typeArguments.length > 0) {
-      return `${typeName}<${typeReference.typeArguments
+      return `${typeName}-${typeReference.typeArguments
         .map((t) => getAnyTypeName(t))
-        .join(",")}>`;
+        .join(".")}-`;
     }
     return typeName;
   } catch (e) {
@@ -644,6 +645,29 @@ function getModelTypeProperties(
             }
           );
 
+          const genericTypesWithDefaults: ts.TypeNode[] = [];
+
+          if (genericTypes.length !== typeParams.length) {
+            //We have some default types that where now specified
+            const genericDefaults: ts.TypeNode[] = node.typeParameters.map(
+              (typeParam: ts.TypeParameter) => {
+                return (
+                  typeParam.symbol
+                    .declarations[0] as ts.TypeParameterDeclaration
+                ).default;
+              }
+            );
+            genericDefaults.forEach((defaultType, index) => {
+              genericTypesWithDefaults.push(genericTypes[index] || defaultType);
+            });
+
+            if (genericTypesWithDefaults.length !== typeParams.length) {
+              throw new Error(`Type with ${node.typeParameter.length} parameters only has ${genericTypesWithDefaults.length} arguments`)
+            }
+          } else {
+            genericTypesWithDefaults.push(...genericTypes);
+          }
+
           // I am not sure in what cases
           const typeIdentifier = (aType as ts.TypeReferenceNode).typeName;
           let typeIdentifierName: string;
@@ -659,7 +683,7 @@ function getModelTypeProperties(
           // I could not produce a situation where this did not find it so its possible this check is irrelevant
           const indexOfType = _.indexOf<string>(typeParams, typeIdentifierName);
           if (indexOfType >= 0) {
-            aType = genericTypes[indexOfType] as ts.TypeNode;
+            aType = genericTypesWithDefaults[indexOfType] as ts.TypeNode;
           }
         }
 

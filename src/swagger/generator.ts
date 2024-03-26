@@ -212,7 +212,10 @@ export class SpecGenerator {
   }
 
   private buildPathMethod(controllerName: string, method: Method) {
-    const pathMethod: any = this.buildOperation(controllerName, method);
+    const pathMethod: OpenAPIV3.OperationObject = this.buildOperation(
+      controllerName,
+      method
+    );
     pathMethod.description = method.description;
     if (method.summary) {
       pathMethod.summary = method.summary;
@@ -229,13 +232,23 @@ export class SpecGenerator {
         [s.name]: s.scopes || [],
       }));
     }
-    this.handleMethodConsumes(method, pathMethod);
 
-    pathMethod.parameters = method.parameters
+    const [bodyParam, noBodyParameter] = method.parameters.reduce<
+      [Parameter[], Parameter[]]
+    >(
+      ([pass, fail], elem) => {
+        return elem.in === "body"
+          ? [[...pass, elem], fail]
+          : [pass, [...fail, elem]];
+      },
+      [[], []]
+    );
+
+    pathMethod.parameters = noBodyParameter
       .filter((p) => p.in !== "param")
       .map((p) => this.buildParameter(p));
 
-    method.parameters
+    noBodyParameter
       .filter((p) => p.in === "param")
       .forEach((p) => {
         pathMethod.parameters.push(
@@ -259,37 +272,18 @@ export class SpecGenerator {
           })
         );
       });
-    if (
-      pathMethod.parameters.filter(
-        (p: OpenAPIV3.ParameterObject) => p.in === "body"
-      ).length > 1
-    ) {
+    if (bodyParam.length > 1) {
       throw new Error("Only one body parameter allowed per controller method.");
     }
+    if (bodyParam.length > 0) {
+      pathMethod.requestBody = {
+        content: {
+          "application/json": { schema: this.getSwaggerType(bodyParam[0].type) },
+        },
+        description: bodyParam[0].description,
+      };
+    }
     return pathMethod;
-  }
-
-  private handleMethodConsumes(method: Method, pathMethod: any) {
-    if (method.consumes.length) {
-      pathMethod.consumes = method.consumes;
-    }
-
-    if (!pathMethod.consumes || !pathMethod.consumes.length) {
-      if (
-        method.parameters.some(
-          (p) => p.in === "formData" && p.type.typeName === "file"
-        )
-      ) {
-        pathMethod.consumes = pathMethod.consumes || [];
-        pathMethod.consumes.push("multipart/form-data");
-      } else if (this.hasFormParams(method)) {
-        pathMethod.consumes = pathMethod.consumes || [];
-        pathMethod.consumes.push("application/x-www-form-urlencoded");
-      } else if (this.supportsBodyParameters(method.method)) {
-        pathMethod.consumes = pathMethod.consumes || [];
-        pathMethod.consumes.push("application/json");
-      }
-    }
   }
 
   private hasFormParams(method: Method) {
@@ -346,14 +340,14 @@ export class SpecGenerator {
         const mimeType = this.getMimeType(swaggerType);
         const codeObject = operation.responses[res.status];
         if (!isReferenceObject(codeObject)) {
-          if (mimeType) {
+          if (swaggerType) {
             codeObject.content[mimeType] = {
               schema: swaggerType,
             };
           }
-          if (res.examples && mimeType) {
-            codeObject.content[mimeType].examples = res.examples;
-          }
+          // if (res.examples && mimeType) {
+          //   codeObject.content[mimeType].examples = res.examples;
+          // }
         }
       }
     });
@@ -364,8 +358,8 @@ export class SpecGenerator {
     if (isReferenceObject(swaggerType)) {
       return "application/json";
     }
-    if(swaggerType === undefined){
-      return "text/html";
+    if (swaggerType === undefined) {
+      return undefined;
     }
 
     if (swaggerType.type === "array" || swaggerType.type === "object") {

@@ -246,7 +246,30 @@ class ParameterGenerator {
         if (!parameter.type) {
             throw new Error(`Parameter ${parameter.name} doesn't have a valid type assigned in '${this.getCurrentLocation()}'.`);
         }
+        let a = this.newResolveType(metadataGenerator_1.MetadataGenerator.current.typeChecker.getTypeAtLocation(parameter.type));
         return (0, resolveType_1.resolveType)(parameter.type, this.genericTypeMap);
+    }
+    newResolveType(type, result = "") {
+        function getAllProps(obj) {
+            var p = [];
+            for (; obj != null; obj = Object.getPrototypeOf(obj)) {
+                var op = Object.getOwnPropertyNames(obj);
+                for (var i = 0; i < op.length; i++)
+                    if (p.indexOf(op[i]) == -1)
+                        p.push(op[i]);
+            }
+            return p;
+        }
+        const props = getAllProps(metadataGenerator_1.MetadataGenerator.current.typeChecker);
+        const is = {};
+        props.forEach((prop) => {
+            if (prop.startsWith("is") && prop.endsWith("Type")) {
+                //@ts-expect-error
+                is[prop] = metadataGenerator_1.MetadataGenerator.current.typeChecker[prop](type);
+            }
+        });
+        debugger;
+        return result;
     }
     getDefaultValue(initializer) {
         if (!initializer) {
