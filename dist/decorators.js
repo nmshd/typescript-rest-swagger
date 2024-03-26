@@ -1,4 +1,4 @@
-'use strict';
+"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.IsDouble = exports.IsFloat = exports.IsLong = exports.IsInt = exports.Hidden = exports.Produces = exports.Consumes = exports.Tags = exports.Example = exports.Response = void 0;
 /**
@@ -25,7 +25,9 @@ exports.IsDouble = exports.IsFloat = exports.IsLong = exports.IsInt = exports.Hi
  * @param example An optional example of response to be added to method documentation.
  */
 function Response(name, description, example) {
-    return () => { return; };
+    return () => {
+        return;
+    };
 }
 exports.Response = Response;
 /**
@@ -46,7 +48,9 @@ exports.Response = Response;
  * @param example The example returned object
  */
 function Example(example) {
-    return () => { return; };
+    return () => {
+        return;
+    };
 }
 exports.Example = Example;
 /**
@@ -64,28 +68,36 @@ exports.Example = Example;
  * @param values a list of tags
  */
 function Tags(...values) {
-    return () => { return; };
+    return () => {
+        return;
+    };
 }
 exports.Tags = Tags;
 /**
  * Document the method or class comsumes property in generated swagger docs
  */
 function Consumes(...values) {
-    return () => { return; };
+    return () => {
+        return;
+    };
 }
 exports.Consumes = Consumes;
 /**
  * Document the method or class produces property in generated swagger docs
  */
 function Produces(...values) {
-    return () => { return; };
+    return () => {
+        return;
+    };
 }
 exports.Produces = Produces;
 /**
  * Document the method or class produces property in generated swagger docs
  */
 function Hidden() {
-    return () => { return; };
+    return () => {
+        return;
+    };
 }
 exports.Hidden = Hidden;
 /**

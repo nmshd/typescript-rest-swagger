@@ -202,7 +202,9 @@ class SpecGenerator {
         if (bodyParam.length > 0) {
             pathMethod.requestBody = {
                 content: {
-                    "application/json": { schema: this.getSwaggerType(bodyParam[0].type) },
+                    "application/json": {
+                        schema: this.getSwaggerType(bodyParam[0].type),
+                    },
                 },
                 description: bodyParam[0].description,
             };

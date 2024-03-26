@@ -1,4 +1,4 @@
-'use strict';
+"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.EndpointGenerator = void 0;
 const debug = require("debug");
@@ -14,7 +14,7 @@ class EndpointGenerator {
         this.debugger = debug(`typescript-rest-swagger:metadata:${name}`);
     }
     getDecoratorValues(decoratorName, acceptMultiple = false) {
-        const decorators = (0, decoratorUtils_1.getDecorators)(this.node, decorator => decorator.text === decoratorName);
+        const decorators = (0, decoratorUtils_1.getDecorators)(this.node, (decorator) => decorator.text === decoratorName);
         if (!decorators || !decorators.length) {
             return [];
         }
@@ -23,29 +23,34 @@ class EndpointGenerator {
         }
         let result;
         if (acceptMultiple) {
-            result = decorators.map(d => d.arguments);
+            result = decorators.map((d) => d.arguments);
         }
         else {
             const d = decorators[0];
             result = d.arguments;
         }
-        this.debugger('Arguments of decorator %s: %j', decoratorName, result);
+        this.debugger("Arguments of decorator %s: %j", decoratorName, result);
         return result;
     }
     getSecurity() {
-        const securities = this.getDecoratorValues('Security', true);
+        const securities = this.getDecoratorValues("Security", true);
         if (!securities || !securities.length) {
             return undefined;
         }
-        return securities.map(security => ({
-            name: security[1] ? security[1] : 'default',
-            scopes: security[0] ? _.castArray(this.handleRolesArray(security[0])) : []
+        return securities.map((security) => ({
+            name: security[1] ? security[1] : "default",
+            scopes: security[0]
+                ? _.castArray(this.handleRolesArray(security[0]))
+                : [],
         }));
     }
     handleRolesArray(argument) {
         if (ts.isArrayLiteralExpression(argument)) {
-            return argument.elements.map(value => value.getText())
-                .map(val => (val && val.startsWith('\'') && val.endsWith('\'')) ? val.slice(1, -1) : val);
+            return argument.elements
+                .map((value) => value.getText())
+                .map((val) => val && val.startsWith("'") && val.endsWith("'")
+                ? val.slice(1, -1)
+                : val);
         }
         else {
             return argument;
@@ -62,7 +67,7 @@ class EndpointGenerator {
         else {
             example = this.getInitializerValue(argument);
         }
-        this.debugger('Example extracted for %s: %j', this.getCurrentLocation(), example);
+        this.debugger("Example extracted for %s: %j", this.getCurrentLocation(), example);
         return example;
     }
     getInitializerValue(initializer) {
@@ -89,14 +94,14 @@ class EndpointGenerator {
         }
     }
     getResponses(genericTypeMap) {
-        const decorators = (0, decoratorUtils_1.getDecorators)(this.node, decorator => decorator.text === 'Response');
+        const decorators = (0, decoratorUtils_1.getDecorators)(this.node, (decorator) => decorator.text === "Response");
         if (!decorators || !decorators.length) {
             return [];
         }
-        this.debugger('Generating Responses for %s', this.getCurrentLocation());
-        return decorators.map(decorator => {
-            let description = '';
-            let status = '200';
+        this.debugger("Generating Responses for %s", this.getCurrentLocation());
+        return decorators.map((decorator) => {
+            let description = "";
+            let status = "200";
             let examples;
             if (decorator.arguments.length > 0 && decorator.arguments[0]) {
                 status = decorator.arguments[0];
@@ -111,12 +116,12 @@ class EndpointGenerator {
             const responses = {
                 description: description,
                 examples: examples,
-                schema: (decorator.typeArguments && decorator.typeArguments.length > 0)
+                schema: decorator.typeArguments && decorator.typeArguments.length > 0
                     ? (0, resolveType_1.resolveType)(decorator.typeArguments[0], genericTypeMap)
                     : undefined,
-                status: status
+                status: status,
             };
-            this.debugger('Generated Responses for %s: %j', this.getCurrentLocation(), responses);
+            this.debugger("Generated Responses for %s: %j", this.getCurrentLocation(), responses);
             return responses;
         });
     }

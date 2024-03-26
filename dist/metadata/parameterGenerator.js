@@ -17,38 +17,40 @@ class ParameterGenerator {
         this.genericTypeMap = genericTypeMap;
     }
     generate() {
-        const decoratorName = (0, decoratorUtils_1.getDecoratorName)(this.parameter, identifier => this.supportParameterDecorator(identifier.text));
+        const decoratorName = (0, decoratorUtils_1.getDecoratorName)(this.parameter, (identifier) => this.supportParameterDecorator(identifier.text));
         switch (decoratorName) {
-            case 'Param':
+            case "Param":
                 return this.getRequestParameter(this.parameter);
-            case 'CookieParam':
+            case "CookieParam":
                 return this.getCookieParameter(this.parameter);
-            case 'FormParam':
+            case "FormParam":
                 return this.getFormParameter(this.parameter);
-            case 'HeaderParam':
+            case "HeaderParam":
                 return this.getHeaderParameter(this.parameter);
-            case 'QueryParam':
+            case "QueryParam":
                 return this.getQueryParameter(this.parameter);
-            case 'PathParam':
+            case "PathParam":
                 return this.getPathParameter(this.parameter);
-            case 'FileParam':
+            case "FileParam":
                 return this.getFileParameter(this.parameter);
-            case 'FilesParam':
+            case "FilesParam":
                 return this.getFilesParameter(this.parameter);
-            case 'Context':
-            case 'ContextRequest':
-            case 'ContextResponse':
-            case 'ContextNext':
-            case 'ContextLanguage':
-            case 'ContextAccept':
+            case "Context":
+            case "ContextRequest":
+            case "ContextResponse":
+            case "ContextNext":
+            case "ContextLanguage":
+            case "ContextAccept":
                 return this.getContextParameter(this.parameter);
             default:
                 return this.getBodyParameter(this.parameter);
         }
     }
     getCurrentLocation() {
-        const methodId = this.parameter.parent.name;
-        const controllerId = this.parameter.parent.parent.name;
+        const methodId = this.parameter.parent
+            .name;
+        const controllerId = this.parameter.parent
+            .parent.name;
         return `${controllerId.text}.${methodId.text}`;
     }
     getRequestParameter(parameter) {
@@ -59,22 +61,22 @@ class ParameterGenerator {
         }
         return {
             description: this.getParameterDescription(parameter),
-            in: 'param',
-            name: (0, decoratorUtils_1.getDecoratorTextValue)(this.parameter, ident => ident.text === 'Param') || parameterName,
+            in: "param",
+            name: (0, decoratorUtils_1.getDecoratorTextValue)(this.parameter, (ident) => ident.text === "Param") || parameterName,
             parameterName: parameterName,
             required: this.isRequired(parameter),
-            type: type
+            type: type,
         };
     }
     getContextParameter(parameter) {
         const parameterName = parameter.name.text;
         return {
             description: this.getParameterDescription(parameter),
-            in: 'context',
+            in: "context",
             name: parameterName,
             parameterName: parameterName,
             required: this.isRequired(parameter),
-            type: { typeName: '' }
+            type: { typeName: "" },
         };
     }
     getFileParameter(parameter) {
@@ -84,11 +86,11 @@ class ParameterGenerator {
         }
         return {
             description: this.getParameterDescription(parameter),
-            in: 'formData',
-            name: (0, decoratorUtils_1.getDecoratorTextValue)(this.parameter, ident => ident.text === 'FileParam') || parameterName,
+            in: "formData",
+            name: (0, decoratorUtils_1.getDecoratorTextValue)(this.parameter, (ident) => ident.text === "FileParam") || parameterName,
             parameterName: parameterName,
             required: this.isRequired(parameter),
-            type: { typeName: 'file' }
+            type: { typeName: "file" },
         };
     }
     getFilesParameter(parameter) {
@@ -98,11 +100,11 @@ class ParameterGenerator {
         }
         return {
             description: this.getParameterDescription(parameter),
-            in: 'formData',
-            name: (0, decoratorUtils_1.getDecoratorTextValue)(this.parameter, ident => ident.text === 'FilesParam') || parameterName,
+            in: "formData",
+            name: (0, decoratorUtils_1.getDecoratorTextValue)(this.parameter, (ident) => ident.text === "FilesParam") || parameterName,
             parameterName: parameterName,
             required: this.isRequired(parameter),
-            type: { typeName: 'file' }
+            type: { typeName: "file" },
         };
     }
     getFormParameter(parameter) {
@@ -113,11 +115,11 @@ class ParameterGenerator {
         }
         return {
             description: this.getParameterDescription(parameter),
-            in: 'formData',
-            name: (0, decoratorUtils_1.getDecoratorTextValue)(this.parameter, ident => ident.text === 'FormParam') || parameterName,
+            in: "formData",
+            name: (0, decoratorUtils_1.getDecoratorTextValue)(this.parameter, (ident) => ident.text === "FormParam") || parameterName,
             parameterName: parameterName,
             required: this.isRequired(parameter),
-            type: type
+            type: type,
         };
     }
     getCookieParameter(parameter) {
@@ -128,11 +130,11 @@ class ParameterGenerator {
         // }
         return {
             description: this.getParameterDescription(parameter),
-            in: 'cookie',
-            name: (0, decoratorUtils_1.getDecoratorTextValue)(this.parameter, ident => ident.text === 'CookieParam') || parameterName,
+            in: "cookie",
+            name: (0, decoratorUtils_1.getDecoratorTextValue)(this.parameter, (ident) => ident.text === "CookieParam") || parameterName,
             parameterName: parameterName,
             required: this.isRequired(parameter),
-            type: { typeName: '' }
+            type: { typeName: "" },
         };
     }
     getBodyParameter(parameter) {
@@ -143,11 +145,11 @@ class ParameterGenerator {
         }
         return {
             description: this.getParameterDescription(parameter),
-            in: 'body',
+            in: "body",
             name: parameterName,
             parameterName: parameterName,
             required: this.isRequired(parameter),
-            type: type
+            type: type,
         };
     }
     getHeaderParameter(parameter) {
@@ -158,16 +160,16 @@ class ParameterGenerator {
         }
         return {
             description: this.getParameterDescription(parameter),
-            in: 'header',
-            name: (0, decoratorUtils_1.getDecoratorTextValue)(this.parameter, ident => ident.text === 'HeaderParam') || parameterName,
+            in: "header",
+            name: (0, decoratorUtils_1.getDecoratorTextValue)(this.parameter, (ident) => ident.text === "HeaderParam") || parameterName,
             parameterName: parameterName,
             required: this.isRequired(parameter),
-            type: type
+            type: type,
         };
     }
     getQueryParameter(parameter) {
         const parameterName = parameter.name.text;
-        const parameterOptions = (0, decoratorUtils_1.getDecoratorOptions)(this.parameter, ident => ident.text === 'QueryParam') || {};
+        const parameterOptions = (0, decoratorUtils_1.getDecoratorOptions)(this.parameter, (ident) => ident.text === "QueryParam") || {};
         let type = this.getValidatedType(parameter);
         if (!this.supportQueryDataType(type)) {
             const arrayType = (0, resolveType_1.getCommonPrimitiveAndArrayUnionType)(parameter.type);
@@ -183,36 +185,38 @@ class ParameterGenerator {
             collectionFormat: parameterOptions.collectionFormat,
             default: this.getDefaultValue(parameter.initializer),
             description: this.getParameterDescription(parameter),
-            in: 'query',
+            in: "query",
             // maxItems: parameterOptions.maxItems,
             // minItems: parameterOptions.minItems,
-            name: (0, decoratorUtils_1.getDecoratorTextValue)(this.parameter, ident => ident.text === 'QueryParam') || parameterName,
+            name: (0, decoratorUtils_1.getDecoratorTextValue)(this.parameter, (ident) => ident.text === "QueryParam") || parameterName,
             parameterName: parameterName,
             required: this.isRequired(parameter),
-            type: type
+            type: type,
         };
     }
     isRequired(parameter) {
-        let isUndefinedUnion = parameter.type.kind === ts.SyntaxKind.UnionType && parameter.type.types.some(t => t.kind === ts.SyntaxKind.UndefinedKeyword);
-        return !parameter.questionToken && !parameter.initializer && !isUndefinedUnion;
+        let isUndefinedUnion = parameter.type.kind === ts.SyntaxKind.UnionType &&
+            parameter.type.types.some((t) => t.kind === ts.SyntaxKind.UndefinedKeyword);
+        return (!parameter.questionToken && !parameter.initializer && !isUndefinedUnion);
     }
     getPathParameter(parameter) {
         const parameterName = parameter.name.text;
         const type = this.getValidatedType(parameter);
-        const pathName = (0, decoratorUtils_1.getDecoratorTextValue)(this.parameter, ident => ident.text === 'PathParam') || parameterName;
+        const pathName = (0, decoratorUtils_1.getDecoratorTextValue)(this.parameter, (ident) => ident.text === "PathParam") || parameterName;
         if (!this.supportPathDataType(type)) {
             throw new InvalidParameterException(`Parameter '${parameterName}:${type}' can't be passed as a path parameter in '${this.getCurrentLocation()}'.`);
         }
-        if ((!this.path.includes(`{${pathName}}`)) && (!this.path.includes(`:${pathName}`))) {
+        if (!this.path.includes(`{${pathName}}`) &&
+            !this.path.includes(`:${pathName}`)) {
             throw new Error(`Parameter '${parameterName}' can't match in path: '${this.path}'`);
         }
         return {
             description: this.getParameterDescription(parameter),
-            in: 'path',
+            in: "path",
             name: pathName,
             parameterName: parameterName,
             required: true,
-            type: type
+            type: type,
         };
     }
     getParameterDescription(node) {
@@ -223,54 +227,79 @@ class ParameterGenerator {
                 return ts.displayPartsToString(comments);
             }
         }
-        return '';
+        return "";
     }
     supportsBodyParameters(method) {
-        return ['delete', 'post', 'put', 'patch'].some(m => m === method);
+        return ["delete", "post", "put", "patch"].some((m) => m === method);
     }
     supportParameterDecorator(decoratorName) {
-        return ['HeaderParam', 'QueryParam', 'Param', 'FileParam',
-            'PathParam', 'FilesParam', 'FormParam', 'CookieParam',
-            'Context', 'ContextRequest', 'ContextResponse', 'ContextNext',
-            'ContextLanguage', 'ContextAccept'].some(d => d === decoratorName);
+        return [
+            "HeaderParam",
+            "QueryParam",
+            "Param",
+            "FileParam",
+            "PathParam",
+            "FilesParam",
+            "FormParam",
+            "CookieParam",
+            "Context",
+            "ContextRequest",
+            "ContextResponse",
+            "ContextNext",
+            "ContextLanguage",
+            "ContextAccept",
+        ].some((d) => d === decoratorName);
     }
     supportPathDataType(parameterType) {
-        return ['string', 'integer', 'long', 'float', 'double', 'date', 'datetime', 'buffer', 'boolean', 'enum'].find(t => t === parameterType.typeName);
+        return [
+            "string",
+            "integer",
+            "long",
+            "float",
+            "double",
+            "date",
+            "datetime",
+            "buffer",
+            "boolean",
+            "enum",
+        ].find((t) => t === parameterType.typeName);
     }
     supportQueryDataType(parameterType) {
         // Copied from supportPathDataType and added 'array'. Not sure if all options apply to queries, but kept to avoid breaking change.
-        return ['string', 'integer', 'long', 'float', 'double', 'date',
-            'datetime', 'buffer', 'boolean', 'enum', 'array'].find(t => t === parameterType.typeName);
+        return [
+            "string",
+            "integer",
+            "long",
+            "float",
+            "double",
+            "date",
+            "datetime",
+            "buffer",
+            "boolean",
+            "enum",
+            "array",
+        ].find((t) => t === parameterType.typeName);
     }
     getValidatedType(parameter) {
         if (!parameter.type) {
             throw new Error(`Parameter ${parameter.name} doesn't have a valid type assigned in '${this.getCurrentLocation()}'.`);
         }
-        let a = this.newResolveType(metadataGenerator_1.MetadataGenerator.current.typeChecker.getTypeAtLocation(parameter.type));
+        // let a = this.newResolveType(
+        //   MetadataGenerator.current.typeChecker.getTypeAtLocation(parameter.type)
+        // );
         return (0, resolveType_1.resolveType)(parameter.type, this.genericTypeMap);
     }
-    newResolveType(type, result = "") {
-        function getAllProps(obj) {
-            var p = [];
-            for (; obj != null; obj = Object.getPrototypeOf(obj)) {
-                var op = Object.getOwnPropertyNames(obj);
-                for (var i = 0; i < op.length; i++)
-                    if (p.indexOf(op[i]) == -1)
-                        p.push(op[i]);
-            }
-            return p;
-        }
-        const props = getAllProps(metadataGenerator_1.MetadataGenerator.current.typeChecker);
-        const is = {};
-        props.forEach((prop) => {
-            if (prop.startsWith("is") && prop.endsWith("Type")) {
-                //@ts-expect-error
-                is[prop] = metadataGenerator_1.MetadataGenerator.current.typeChecker[prop](type);
-            }
-        });
-        debugger;
-        return result;
-    }
+    //   private newResolveType(type: any, result = ""): string {
+    //     let a = MetadataGenerator.current.typeChecker.getType(
+    //       MetadataGenerator.current.typeChecker.typeToTypeNode(
+    //         type.resolvedTypeArguments[0],
+    //         undefined,
+    //         undefined
+    //       )
+    //     );
+    //     debugger;
+    //     return result;
+    //   }
     getDefaultValue(initializer) {
         if (!initializer) {
             return;

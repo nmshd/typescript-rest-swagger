@@ -480,6 +480,23 @@ function getModelTypeProperties(node, genericTypes) {
                 const typeParams = _.map(node.typeParameters, (typeParam) => {
                     return typeParam.name.text;
                 });
+                const genericTypesWithDefaults = [];
+                if (genericTypes.length !== typeParams.length) {
+                    //We have some default types that where now specified
+                    const genericDefaults = node.typeParameters.map((typeParam) => {
+                        return typeParam.symbol
+                            .declarations[0].default;
+                    });
+                    genericDefaults.forEach((defaultType, index) => {
+                        genericTypesWithDefaults.push(genericTypes[index] || defaultType);
+                    });
+                    if (genericTypesWithDefaults.length !== typeParams.length) {
+                        throw new Error(`Type with ${node.typeParameter.length} parameters only has ${genericTypesWithDefaults.length} arguments`);
+                    }
+                }
+                else {
+                    genericTypesWithDefaults.push(...genericTypes);
+                }
                 // I am not sure in what cases
                 const typeIdentifier = aType.typeName;
                 let typeIdentifierName;
@@ -494,7 +511,7 @@ function getModelTypeProperties(node, genericTypes) {
                 // I could not produce a situation where this did not find it so its possible this check is irrelevant
                 const indexOfType = _.indexOf(typeParams, typeIdentifierName);
                 if (indexOfType >= 0) {
-                    aType = genericTypes[indexOfType];
+                    aType = genericTypesWithDefaults[indexOfType];
                 }
             }
             return {

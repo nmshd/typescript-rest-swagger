@@ -8,10 +8,10 @@ function getDecorators(node, isMatching) {
         return [];
     }
     return decorators
-        .map(d => {
+        .map((d) => {
         const result = {
             arguments: [],
-            typeArguments: []
+            typeArguments: [],
         };
         let x = d.expression;
         if (ts.isCallExpression(x)) {
@@ -53,12 +53,16 @@ function getDecoratorName(node, isMatching) {
 exports.getDecoratorName = getDecoratorName;
 function getDecoratorTextValue(node, isMatching) {
     const decorator = getDecorator(node, isMatching);
-    return decorator && typeof decorator.arguments[0] === 'string' ? decorator.arguments[0] : undefined;
+    return decorator && typeof decorator.arguments[0] === "string"
+        ? decorator.arguments[0]
+        : undefined;
 }
 exports.getDecoratorTextValue = getDecoratorTextValue;
 function getDecoratorOptions(node, isMatching) {
     const decorator = getDecorator(node, isMatching);
-    return decorator && typeof decorator.arguments[1] === 'object' ? decorator.arguments[1] : undefined;
+    return decorator && typeof decorator.arguments[1] === "object"
+        ? decorator.arguments[1]
+        : undefined;
 }
 exports.getDecoratorOptions = getDecoratorOptions;
 function isDecorator(node, isMatching) {

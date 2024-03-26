@@ -15,6 +15,6 @@ exports.keywords = [
     typescript_1.SyntaxKind.VoidKeyword,
     typescript_1.SyntaxKind.UndefinedKeyword,
     typescript_1.SyntaxKind.NullKeyword,
-    typescript_1.SyntaxKind.NeverKeyword
+    typescript_1.SyntaxKind.NeverKeyword,
 ];
 //# sourceMappingURL=keywordKinds.js.map

@@ -1,4 +1,4 @@
-import * as ts from 'typescript';
+import * as ts from "typescript";
 export declare function getDecorators(node: ts.Node, isMatching: (identifier: DecoratorData) => boolean): Array<DecoratorData>;
 export declare function getDecoratorName(node: ts.Node, isMatching: (identifier: DecoratorData) => boolean): string;
 export declare function getDecoratorTextValue(node: ts.Node, isMatching: (identifier: DecoratorData) => boolean): string;

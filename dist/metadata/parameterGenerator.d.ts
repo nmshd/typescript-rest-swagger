@@ -1,5 +1,5 @@
-import * as ts from 'typescript';
-import { Parameter } from './metadataGenerator';
+import * as ts from "typescript";
+import { Parameter } from "./metadataGenerator";
 export declare class ParameterGenerator {
     private readonly parameter;
     private readonly method;
@@ -25,7 +25,6 @@ export declare class ParameterGenerator {
     private supportPathDataType;
     private supportQueryDataType;
     private getValidatedType;
-    private newResolveType;
     private getDefaultValue;
 }
 //# sourceMappingURL=parameterGenerator.d.ts.map

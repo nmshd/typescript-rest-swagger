@@ -4,9 +4,9 @@ exports.getFirstMatchingJSDocTagName = exports.isExistJSDocTag = exports.getJSDo
 function getJSDocDescription(node) {
     const jsDocs = node.jsDoc;
     if (!jsDocs || !jsDocs.length) {
-        return '';
+        return "";
     }
-    return jsDocs[0].comment || '';
+    return jsDocs[0].comment || "";
 }
 exports.getJSDocDescription = getJSDocDescription;
 function getJSDocTag(node, tagName) {
@@ -26,7 +26,7 @@ function isExistJSDocTag(node, tagName) {
 }
 exports.isExistJSDocTag = isExistJSDocTag;
 function getJSDocTags(node, tagName) {
-    return getMatchingJSDocTags(node, t => t.tagName.text === tagName);
+    return getMatchingJSDocTags(node, (t) => t.tagName.text === tagName);
 }
 function getFirstMatchingJSDocTagName(node, isMatching) {
     const tags = getMatchingJSDocTags(node, isMatching);
