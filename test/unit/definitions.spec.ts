@@ -1,6 +1,9 @@
 import * as swaggerParser from "@apidevtools/swagger-parser";
 import { cloneDeep } from "lodash";
-import { Metadata, MetadataGenerator } from "../../src/metadata/metadataGenerator";
+import {
+  Metadata,
+  MetadataGenerator,
+} from "../../src/metadata/metadataGenerator";
 import { SpecGenerator } from "../../src/swagger/generator";
 import { Swagger } from "../../src/swagger/swagger";
 import { getDefaultOptions } from "../data/defaultOptions";
@@ -27,7 +30,7 @@ describe("Definition generation", () => {
     specDeRef = (await swaggerParser.dereference(
       cloneDeep(spec) as any
     )) as unknown as Swagger.Spec;
-    debugger
+    debugger;
   });
 
   describe("MyService", () => {
@@ -541,9 +544,7 @@ describe("Definition generation", () => {
     it.skip("should apply controller security to request", async () => {
       const expression = jsonata('paths."/secure".get.security');
       const res = await expression.evaluate(spec);
-      expect(res).toStrictEqual([
-        { access_token: ["ROLE_1", "ROLE_2"] },
-      ]);
+      expect(res).toStrictEqual([{ access_token: ["ROLE_1", "ROLE_2"] }]);
     });
 
     it("method security should override controller security", async () => {
@@ -635,10 +636,12 @@ describe("Definition generation", () => {
 
   describe("deep generic object", () => {
     test("TestDeepGenericObject", async () => {
-      const expression = jsonata('paths."/mypath/generic".get.responses."200".schema."$ref"');
+      const expression = jsonata(
+        'paths."/mypath/generic".get.responses."200".schema."$ref"'
+      );
 
-      const res = await expression.evaluate(spec)
-      expect(res).toEqual('#/definitions/GenericA<Deep<End[],Error>,Error>');
+      const res = await expression.evaluate(spec);
+      expect(res).toEqual("#/definitions/GenericA<Deep<End[],Error>,Error>");
     });
   });
 });

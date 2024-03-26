@@ -337,13 +337,13 @@ export class DerivedEndpoint2 {
 }
 
 type SomeDeepType = {
-  name:string;
-  value: {key:string};
-}
+  name: string;
+  value: { key: string };
+};
 type SomeDeepType2 = {
-  name:string;
-  value: {key:string};
-}
+  name: string;
+  value: { key: string };
+};
 
 // tslint:disable-next-line: interface-over-type-literal
 export type SimpleHelloType = {

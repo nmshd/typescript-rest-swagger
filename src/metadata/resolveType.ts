@@ -662,7 +662,9 @@ function getModelTypeProperties(
             });
 
             if (genericTypesWithDefaults.length !== typeParams.length) {
-              throw new Error(`Type with ${node.typeParameter.length} parameters only has ${genericTypesWithDefaults.length} arguments`)
+              throw new Error(
+                `Type with ${node.typeParameter.length} parameters only has ${genericTypesWithDefaults.length} arguments`
+              );
             }
           } else {
             genericTypesWithDefaults.push(...genericTypes);

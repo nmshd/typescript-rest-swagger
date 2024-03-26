@@ -1,14 +1,14 @@
 import * as ts from "typescript";
 import {
-    getDecoratorName,
-    getDecoratorOptions,
-    getDecoratorTextValue,
+  getDecoratorName,
+  getDecoratorOptions,
+  getDecoratorTextValue,
 } from "../utils/decoratorUtils";
 import { MetadataGenerator, Parameter, Type } from "./metadataGenerator";
 import {
-    getCommonPrimitiveAndArrayUnionType,
-    getLiteralValue,
-    resolveType,
+  getCommonPrimitiveAndArrayUnionType,
+  getLiteralValue,
+  resolveType,
 } from "./resolveType";
 
 export class ParameterGenerator {
@@ -401,18 +401,18 @@ export class ParameterGenerator {
     return resolveType(parameter.type, this.genericTypeMap);
   }
 
-//   private newResolveType(type: any, result = ""): string {
-//     let a = MetadataGenerator.current.typeChecker.getType(
-//       MetadataGenerator.current.typeChecker.typeToTypeNode(
-//         type.resolvedTypeArguments[0],
-//         undefined,
-//         undefined
-//       )
-//     );
+  //   private newResolveType(type: any, result = ""): string {
+  //     let a = MetadataGenerator.current.typeChecker.getType(
+  //       MetadataGenerator.current.typeChecker.typeToTypeNode(
+  //         type.resolvedTypeArguments[0],
+  //         undefined,
+  //         undefined
+  //       )
+  //     );
 
-//     debugger;
-//     return result;
-//   }
+  //     debugger;
+  //     return result;
+  //   }
 
   private getDefaultValue(initializer?: ts.Expression) {
     if (!initializer) {

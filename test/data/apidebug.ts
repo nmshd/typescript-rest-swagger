@@ -1,16 +1,16 @@
 import { POST, Path } from "typescript-rest";
 
 interface B {
-  a:string;
+  a: string;
 }
 interface D {
-  a:string;
+  a: string;
 }
 
-export interface A<K,T extends B = B>{
-  c:T
-// export interface A<K>{
-  d:K
+export interface A<K, T extends B = B> {
+  c: T;
+  // export interface A<K>{
+  d: K;
 }
 @Path("type")
 export class TypeEndpoint {

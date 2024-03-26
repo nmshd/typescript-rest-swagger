@@ -6,8 +6,7 @@ import { Swagger } from "../src/swagger/swagger";
 import { getDefaultOptions } from "./data/defaultOptions";
 
 (async function () {
-    
-const compilerOptions = {
+  const compilerOptions = {
     baseUrl: ".",
     paths: {
       "@/*": ["test/data/*"],
@@ -17,10 +16,13 @@ const compilerOptions = {
     ["./test/data/apidebug.ts"],
     compilerOptions
   ).generate();
-  const spec = new SpecGenerator(metadata, getDefaultOptions()).getOpenApiSpec();
+  const spec = new SpecGenerator(
+    metadata,
+    getDefaultOptions()
+  ).getOpenApiSpec();
   const specDeRef = (await swaggerParser.dereference(
     cloneDeep(spec) as any
   )) as unknown as Swagger.Spec;
   JSON.stringify(specDeRef);
   debugger;
-})()
+})();
