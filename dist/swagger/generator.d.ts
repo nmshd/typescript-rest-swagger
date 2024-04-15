@@ -12,8 +12,6 @@ export declare class SpecGenerator {
     private buildDefinitions;
     private buildPaths;
     private buildPathMethod;
-    private hasFormParams;
-    private supportsBodyParameters;
     private buildParameter;
     private buildProperties;
     private buildOperation;

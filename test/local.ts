@@ -14,7 +14,7 @@ import { getDefaultOptions } from "./data/defaultOptions";
   };
   const metadata = new MetadataGenerator(
     ["./test/data/apidebug.ts"],
-    compilerOptions
+    "./test/tsconfig.json",
   ).generate();
   const spec = new SpecGenerator(
     metadata,

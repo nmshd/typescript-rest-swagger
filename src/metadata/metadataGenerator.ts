@@ -1,52 +1,73 @@
 import * as debug from "debug";
-import * as glob from "glob";
-import * as _ from "lodash";
+import { glob } from "glob";
 import { match } from "minimatch";
+import { relative } from "path";
+import { Project } from "ts-morph";
 import * as ts from "typescript";
 import { isDecorator } from "../utils/decoratorUtils";
 import { ControllerGenerator } from "./controllerGenerator";
+import _ = require("lodash");
 
 export class MetadataGenerator {
   public static current: MetadataGenerator;
   public readonly nodes = new Array<ts.Node>();
   public readonly typeChecker: ts.TypeChecker;
-  private readonly program: ts.Program;
-  private referenceTypes: { [typeName: string]: ReferenceType } = {};
+  public readonly program: ts.Program;
+  private referenceTypes: {
+    [typeName: string]: ReferenceType;
+  } = {};
   private circularDependencyResolvers = new Array<
     (referenceTypes: { [typeName: string]: ReferenceType }) => void
   >();
   private debugger = debug("typescript-rest-swagger:metadata");
+  public morph: Project;
+  private targetFiles: string[];
 
   constructor(
     entryFile: string | Array<string>,
-    compilerOptions: ts.CompilerOptions,
+    tsConfigFilePath: string,
     private readonly ignorePaths?: Array<string>
   ) {
-    const sourceFiles = this.getSourceFiles(entryFile);
+    this.targetFiles = this.getSourceFiles(entryFile);
     this.debugger("Starting Metadata Generator");
-    this.debugger("Source files: %j ", sourceFiles);
-    this.debugger("Compiler Options: %j ", compilerOptions);
-    this.program = ts.createProgram(sourceFiles, compilerOptions);
-    this.typeChecker = this.program.getTypeChecker();
+    this.debugger("Entry File: %j ", entryFile);
+    this.debugger("Ts Config Path: %j ", tsConfigFilePath);
+    this.morph = new Project({
+      tsConfigFilePath: tsConfigFilePath,
+    });
+    this.morph.addSourceFilesAtPaths(entryFile);
     MetadataGenerator.current = this;
+    this.program = this.morph.getProgram().compilerObject;
+    this.typeChecker = this.program.getTypeChecker();
   }
 
   public generate(): Metadata {
     this.program.getSourceFiles().forEach((sf) => {
       if (this.ignorePaths && this.ignorePaths.length) {
         for (const path of this.ignorePaths) {
-          if (
-            !sf.fileName.includes("node_modules/typescript-rest/") &&
-            match([sf.fileName], path)
-          ) {
+          if (match([sf.fileName], path).length > 0) {
             return;
           }
         }
       }
+      if (sf.fileName.includes("node_modules")) return;
 
-      ts.forEachChild(sf, (node) => {
+      let matchTargetFile = this.targetFiles.some((targetFile) => {
+        return relative(process.cwd(),sf.fileName).includes(targetFile);
+      })
+
+      if(!matchTargetFile) return;
+
+      let addNodes = (node: ts.Node) => {
         this.nodes.push(node);
-      });
+        if (
+          node.kind === ts.SyntaxKind.ModuleDeclaration ||
+          node.kind === ts.SyntaxKind.ModuleBlock
+        ) {
+          ts.forEachChild(node, addNodes);
+        }
+      };
+      ts.forEachChild(sf, addNodes);
     });
 
     this.debugger("Building Metadata for controllers Generator");
@@ -72,41 +93,18 @@ export class MetadataGenerator {
   public getReferenceType(typeName: string) {
     return this.referenceTypes[typeName];
   }
+  public getReferenceTypes() {
+    return this.referenceTypes;
+  }
+
+  public removeReferenceType(typeName: string) {
+    delete this.referenceTypes[typeName];
+  }
 
   public onFinish(
     callback: (referenceTypes: { [typeName: string]: ReferenceType }) => void
   ) {
     this.circularDependencyResolvers.push(callback);
-  }
-
-  public getClassDeclaration(className: string) {
-    const found = this.nodes.filter((node) => {
-      const classDeclaration = node as ts.ClassDeclaration;
-      return (
-        node.kind === ts.SyntaxKind.ClassDeclaration &&
-        classDeclaration.name &&
-        classDeclaration.name.text === className
-      );
-    });
-    if (found && found.length) {
-      return found[0];
-    }
-    return undefined;
-  }
-
-  public getInterfaceDeclaration(className: string) {
-    const found = this.nodes.filter((node) => {
-      const interfaceDeclaration = node as ts.InterfaceDeclaration;
-      return (
-        node.kind === ts.SyntaxKind.InterfaceDeclaration &&
-        interfaceDeclaration.name &&
-        interfaceDeclaration.name.text === className
-      );
-    });
-    if (found && found.length) {
-      return found[0];
-    }
-    return undefined;
   }
 
   private getSourceFiles(sourceFiles: string | Array<string>) {
@@ -123,7 +121,6 @@ export class MetadataGenerator {
 
     return Array.from(result);
   }
-
   private buildControllers() {
     return this.nodes
       .filter((node) => node.kind === ts.SyntaxKind.ClassDeclaration)

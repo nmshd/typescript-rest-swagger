@@ -55,7 +55,7 @@ debugLog("Swagger Config: %j", swaggerConfig);
 debugLog("Processing Services Metadata");
 const metadata = new MetadataGenerator(
   swaggerConfig.entryFile,
-  compilerOptions,
+  parameters.tsconfig_path,
   swaggerConfig.ignore
 ).generate();
 debugLog("Generated Metadata: %j", metadata);

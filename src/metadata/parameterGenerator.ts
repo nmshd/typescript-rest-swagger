@@ -30,7 +30,7 @@ export class ParameterGenerator {
       case "CookieParam":
         return this.getCookieParameter(this.parameter);
       case "FormParam":
-        return this.getFormParameter(this.parameter);
+        return undefined // this.getFormParameter(this.parameter);
       case "HeaderParam":
         return this.getHeaderParameter(this.parameter);
       case "QueryParam":
@@ -38,9 +38,9 @@ export class ParameterGenerator {
       case "PathParam":
         return this.getPathParameter(this.parameter);
       case "FileParam":
-        return this.getFileParameter(this.parameter);
+        return undefined //  this.getFileParameter(this.parameter);
       case "FilesParam":
-        return this.getFilesParameter(this.parameter);
+        return undefined //  this.getFilesParameter(this.parameter);
       case "Context":
       case "ContextRequest":
       case "ContextResponse":
@@ -96,76 +96,6 @@ export class ParameterGenerator {
       parameterName: parameterName,
       required: this.isRequired(parameter),
       type: { typeName: "" },
-    };
-  }
-
-  private getFileParameter(parameter: ts.ParameterDeclaration): Parameter {
-    const parameterName = (parameter.name as ts.Identifier).text;
-
-    if (!this.supportsBodyParameters(this.method)) {
-      throw new Error(
-        `FileParam can't support '${this.getCurrentLocation()}' method.`
-      );
-    }
-
-    return {
-      description: this.getParameterDescription(parameter),
-      in: "formData",
-      name:
-        getDecoratorTextValue(
-          this.parameter,
-          (ident) => ident.text === "FileParam"
-        ) || parameterName,
-      parameterName: parameterName,
-      required: this.isRequired(parameter),
-      type: { typeName: "file" },
-    };
-  }
-
-  private getFilesParameter(parameter: ts.ParameterDeclaration): Parameter {
-    const parameterName = (parameter.name as ts.Identifier).text;
-
-    if (!this.supportsBodyParameters(this.method)) {
-      throw new Error(
-        `FilesParam can't support '${this.getCurrentLocation()}' method.`
-      );
-    }
-
-    return {
-      description: this.getParameterDescription(parameter),
-      in: "formData",
-      name:
-        getDecoratorTextValue(
-          this.parameter,
-          (ident) => ident.text === "FilesParam"
-        ) || parameterName,
-      parameterName: parameterName,
-      required: this.isRequired(parameter),
-      type: { typeName: "file" },
-    };
-  }
-
-  private getFormParameter(parameter: ts.ParameterDeclaration): Parameter {
-    const parameterName = (parameter.name as ts.Identifier).text;
-    const type = this.getValidatedType(parameter);
-
-    if (!this.supportsBodyParameters(this.method)) {
-      throw new Error(
-        `Form can't support '${this.getCurrentLocation()}' method.`
-      );
-    }
-
-    return {
-      description: this.getParameterDescription(parameter),
-      in: "formData",
-      name:
-        getDecoratorTextValue(
-          this.parameter,
-          (ident) => ident.text === "FormParam"
-        ) || parameterName,
-      parameterName: parameterName,
-      required: this.isRequired(parameter),
-      type: type,
     };
   }
 
@@ -395,24 +325,9 @@ export class ParameterGenerator {
         } doesn't have a valid type assigned in '${this.getCurrentLocation()}'.`
       );
     }
-    // let a = this.newResolveType(
-    //   MetadataGenerator.current.typeChecker.getTypeAtLocation(parameter.type)
-    // );
     return resolveType(parameter.type, this.genericTypeMap);
   }
 
-  //   private newResolveType(type: any, result = ""): string {
-  //     let a = MetadataGenerator.current.typeChecker.getType(
-  //       MetadataGenerator.current.typeChecker.typeToTypeNode(
-  //         type.resolvedTypeArguments[0],
-  //         undefined,
-  //         undefined
-  //       )
-  //     );
-
-  //     debugger;
-  //     return result;
-  //   }
 
   private getDefaultValue(initializer?: ts.Expression) {
     if (!initializer) {

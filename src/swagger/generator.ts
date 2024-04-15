@@ -193,7 +193,7 @@ export class SpecGenerator {
         method.consumes = _.union(controller.consumes, method.consumes);
         method.produces = _.union(controller.produces, method.produces);
         method.tags = _.union(controller.tags, method.tags);
-        method.security = method.security || controller.security;
+        // method.security = method.security || controller.security;
         method.responses = _.union(controller.responses, method.responses);
         const pathObject: any = paths[path];
         pathObject[method.method] = this.buildPathMethod(
@@ -227,11 +227,11 @@ export class SpecGenerator {
     if (method.tags.length) {
       pathMethod.tags = method.tags;
     }
-    if (method.security) {
-      pathMethod.security = method.security.map((s) => ({
-        [s.name]: s.scopes || [],
-      }));
-    }
+    // if (method.security) {
+    //   pathMethod.security = method.security.map((s) => ({
+    //     [s.name]: s.scopes || [],
+    //   }));
+    // }
 
     const [bodyParam, noBodyParameter] = method.parameters.reduce<
       [Parameter[], Parameter[]]
@@ -261,16 +261,16 @@ export class SpecGenerator {
             type: p.type,
           })
         );
-        pathMethod.parameters.push(
-          this.buildParameter({
-            description: p.description,
-            in: "formData",
-            name: p.name,
-            parameterName: p.parameterName,
-            required: false,
-            type: p.type,
-          })
-        );
+        // pathMethod.parameters.push(
+        //   this.buildParameter({
+        //     description: p.description,
+        //     in: "formData",
+        //     name: p.name,
+        //     parameterName: p.parameterName,
+        //     required: false,
+        //     type: p.type,
+        //   })
+        // );
       });
     if (bodyParam.length > 1) {
       throw new Error("Only one body parameter allowed per controller method.");
@@ -288,13 +288,6 @@ export class SpecGenerator {
     return pathMethod;
   }
 
-  private hasFormParams(method: Method) {
-    return method.parameters.find((p) => p.in === "formData");
-  }
-
-  private supportsBodyParameters(method: string) {
-    return ["post", "put", "patch"].some((m) => m === method);
-  }
 
   private buildParameter(parameter: Parameter): OpenAPIV3.ParameterObject {
     const swaggerParameter: OpenAPIV3.ParameterObject = {
@@ -316,6 +309,9 @@ export class SpecGenerator {
 
     properties.forEach((property) => {
       const swaggerType = this.getSwaggerType(property.type);
+      if (!swaggerType) {
+        return;
+      }
       if (!isReferenceObject(swaggerType)) {
         swaggerType.description = property.description;
       }
@@ -413,6 +409,25 @@ export class SpecGenerator {
     const unionType = type as UnionType;
     if (unionType.types && unionType.types.length > 0) {
       let map = unionType.types.map((t) => this.getSwaggerType(t));
+
+      let [enums, nonEnums] = _.partition(map, (m) => {
+        return m.hasOwnProperty("enum");
+      });
+
+      map = [...nonEnums];
+
+      let groupedEnums = _.groupBy(enums, (e) => "type" in e && e.type);
+
+      _.each(
+        groupedEnums,
+        (enums, type: OpenAPIV3.NonArraySchemaObjectType) => {
+          let enumValues = _.flatten(enums.map((e) => "enum" in e && e.enum));
+          map.push({ type: type, enum: enumValues });
+        }
+      );
+      if(map.length === 1) {
+        return map[0]
+      }
 
       return { oneOf: map };
     }

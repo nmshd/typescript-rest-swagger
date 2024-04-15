@@ -41,7 +41,7 @@ debugLog("Compiler Options: %j", compilerOptions);
 const swaggerConfig = validateSwaggerConfig(config.swagger);
 debugLog("Swagger Config: %j", swaggerConfig);
 debugLog("Processing Services Metadata");
-const metadata = new metadataGenerator_1.MetadataGenerator(swaggerConfig.entryFile, compilerOptions, swaggerConfig.ignore).generate();
+const metadata = new metadataGenerator_1.MetadataGenerator(swaggerConfig.entryFile, parameters.tsconfig_path, swaggerConfig.ignore).generate();
 debugLog("Generated Metadata: %j", metadata);
 new generator_1.SpecGenerator(metadata, swaggerConfig)
     .generate()

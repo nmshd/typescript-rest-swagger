@@ -10,9 +10,6 @@ export declare class ParameterGenerator {
     private getCurrentLocation;
     private getRequestParameter;
     private getContextParameter;
-    private getFileParameter;
-    private getFilesParameter;
-    private getFormParameter;
     private getCookieParameter;
     private getBodyParameter;
     private getHeaderParameter;

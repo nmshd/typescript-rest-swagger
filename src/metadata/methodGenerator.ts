@@ -2,13 +2,18 @@ import * as pathUtil from "path";
 import * as ts from "typescript";
 import { getDecorators } from "../utils/decoratorUtils";
 import {
-    getJSDocDescription,
-    getJSDocTag,
-    isExistJSDocTag,
+  getJSDocDescription,
+  getJSDocTag,
+  isExistJSDocTag,
 } from "../utils/jsDocUtils";
 import { normalizePath } from "../utils/pathUtils";
 import { EndpointGenerator } from "./endpointGenerator";
-import { Method, ResponseData, ResponseType, Type } from "./metadataGenerator";
+import {
+  Method,
+  ResponseData,
+  ResponseType,
+  Type
+} from "./metadataGenerator";
 import { ParameterGenerator } from "./parameterGenerator";
 import { resolveType } from "./resolveType";
 
@@ -43,6 +48,12 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
       "Generating Metadata for method %s",
       this.getCurrentLocation()
     );
+    // TODO implement implicit return type 
+    // const typeChecker = MetadataGenerator.current.typeChecker;
+    // const signature =
+    //   typeChecker.getSignatureFromDeclaration(this.node);
+    // const returnType = typeChecker.getReturnTypeOfSignature(signature);
+    // const kind = ts.SyntaxKind[this.node.kind];
     const identifier = this.node.name as ts.Identifier;
     const type = resolveType(this.node.type, this.genericTypeMap);
     const responses = this.mergeResponses(
@@ -112,7 +123,7 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
           );
         }
       })
-      .filter((p) => p.in !== "context" && p.in !== "cookie");
+      .filter((p) => p && p.in !== "context" && p.in !== "cookie");
 
     const bodyParameters = parameters.filter((p) => p.in === "body");
     const formParameters = parameters.filter((p) => p.in === "formData");

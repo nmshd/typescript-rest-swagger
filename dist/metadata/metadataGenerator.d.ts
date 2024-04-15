@@ -1,23 +1,28 @@
+import { Project } from "ts-morph";
 import * as ts from "typescript";
 export declare class MetadataGenerator {
     private readonly ignorePaths?;
     static current: MetadataGenerator;
     readonly nodes: ts.Node[];
     readonly typeChecker: ts.TypeChecker;
-    private readonly program;
+    readonly program: ts.Program;
     private referenceTypes;
     private circularDependencyResolvers;
     private debugger;
-    constructor(entryFile: string | Array<string>, compilerOptions: ts.CompilerOptions, ignorePaths?: Array<string>);
+    morph: Project;
+    private targetFiles;
+    constructor(entryFile: string | Array<string>, tsConfigFilePath: string, ignorePaths?: Array<string>);
     generate(): Metadata;
     TypeChecker(): ts.TypeChecker;
     addReferenceType(referenceType: ReferenceType): void;
     getReferenceType(typeName: string): ReferenceType;
+    getReferenceTypes(): {
+        [typeName: string]: ReferenceType;
+    };
+    removeReferenceType(typeName: string): void;
     onFinish(callback: (referenceTypes: {
         [typeName: string]: ReferenceType;
     }) => void): void;
-    getClassDeclaration(className: string): ts.Node;
-    getInterfaceDeclaration(className: string): ts.Node;
     private getSourceFiles;
     private buildControllers;
 }

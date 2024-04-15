@@ -31,6 +31,12 @@ class MethodGenerator extends endpointGenerator_1.EndpointGenerator {
             throw new Error("This isn't a valid controller method.");
         }
         this.debugger("Generating Metadata for method %s", this.getCurrentLocation());
+        // TODO implement implicit return type 
+        // const typeChecker = MetadataGenerator.current.typeChecker;
+        // const signature =
+        //   typeChecker.getSignatureFromDeclaration(this.node);
+        // const returnType = typeChecker.getReturnTypeOfSignature(signature);
+        // const kind = ts.SyntaxKind[this.node.kind];
         const identifier = this.node.name;
         const type = (0, resolveType_1.resolveType)(this.node.type, this.genericTypeMap);
         const responses = this.mergeResponses(this.getResponses(this.genericTypeMap), this.getMethodSuccessResponse(type));
@@ -76,7 +82,7 @@ class MethodGenerator extends endpointGenerator_1.EndpointGenerator {
                 throw new Error(`Error generate parameter method: '${controllerId.text}.${methodId.text}' argument: ${parameterId.text} ${e} \n ${e.stack}`);
             }
         })
-            .filter((p) => p.in !== "context" && p.in !== "cookie");
+            .filter((p) => p && p.in !== "context" && p.in !== "cookie");
         const bodyParameters = parameters.filter((p) => p.in === "body");
         const formParameters = parameters.filter((p) => p.in === "formData");
         if (bodyParameters.length > 1) {

@@ -142,7 +142,7 @@ class SpecGenerator {
                 method.consumes = _.union(controller.consumes, method.consumes);
                 method.produces = _.union(controller.produces, method.produces);
                 method.tags = _.union(controller.tags, method.tags);
-                method.security = method.security || controller.security;
+                // method.security = method.security || controller.security;
                 method.responses = _.union(controller.responses, method.responses);
                 const pathObject = paths[path];
                 pathObject[method.method] = this.buildPathMethod(controller.name, method);
@@ -163,11 +163,11 @@ class SpecGenerator {
         if (method.tags.length) {
             pathMethod.tags = method.tags;
         }
-        if (method.security) {
-            pathMethod.security = method.security.map((s) => ({
-                [s.name]: s.scopes || [],
-            }));
-        }
+        // if (method.security) {
+        //   pathMethod.security = method.security.map((s) => ({
+        //     [s.name]: s.scopes || [],
+        //   }));
+        // }
         const [bodyParam, noBodyParameter] = method.parameters.reduce(([pass, fail], elem) => {
             return elem.in === "body"
                 ? [[...pass, elem], fail]
@@ -187,14 +187,16 @@ class SpecGenerator {
                 required: false,
                 type: p.type,
             }));
-            pathMethod.parameters.push(this.buildParameter({
-                description: p.description,
-                in: "formData",
-                name: p.name,
-                parameterName: p.parameterName,
-                required: false,
-                type: p.type,
-            }));
+            // pathMethod.parameters.push(
+            //   this.buildParameter({
+            //     description: p.description,
+            //     in: "formData",
+            //     name: p.name,
+            //     parameterName: p.parameterName,
+            //     required: false,
+            //     type: p.type,
+            //   })
+            // );
         });
         if (bodyParam.length > 1) {
             throw new Error("Only one body parameter allowed per controller method.");
@@ -211,12 +213,6 @@ class SpecGenerator {
         }
         return pathMethod;
     }
-    hasFormParams(method) {
-        return method.parameters.find((p) => p.in === "formData");
-    }
-    supportsBodyParameters(method) {
-        return ["post", "put", "patch"].some((m) => m === method);
-    }
     buildParameter(parameter) {
         const swaggerParameter = {
             description: parameter.description,
@@ -232,6 +228,9 @@ class SpecGenerator {
         const swaggerProperties = {};
         properties.forEach((property) => {
             const swaggerType = this.getSwaggerType(property.type);
+            if (!swaggerType) {
+                return;
+            }
             if (!(0, swagger_1.isReferenceObject)(swaggerType)) {
                 swaggerType.description = property.description;
             }
@@ -312,6 +311,18 @@ class SpecGenerator {
         const unionType = type;
         if (unionType.types && unionType.types.length > 0) {
             let map = unionType.types.map((t) => this.getSwaggerType(t));
+            let [enums, nonEnums] = _.partition(map, (m) => {
+                return m.hasOwnProperty("enum");
+            });
+            map = [...nonEnums];
+            let groupedEnums = _.groupBy(enums, (e) => "type" in e && e.type);
+            _.each(groupedEnums, (enums, type) => {
+                let enumValues = _.flatten(enums.map((e) => "enum" in e && e.enum));
+                map.push({ type: type, enum: enumValues });
+            });
+            if (map.length === 1) {
+                return map[0];
+            }
             return { oneOf: map };
         }
         const objectType = type;
