@@ -469,14 +469,22 @@ export class SpecGenerator {
     return { type: "array", items: this.getSwaggerType(arrayType.elementType) };
   }
 
-  private getSwaggerTypeForEnumType(
-    enumType: EnumerateType
-  ): OpenAPIV3.NonArraySchemaObject {
+  private getSwaggerTypeForEnumType(enumType: EnumerateType): Schema {
+
+    function getDerivedTypeFromValues(values: Array<any>): OpenAPIV3.NonArraySchemaObjectType {
+        return values.reduce((derivedType: string, item) => {
+            const currentType = typeof item;
+            derivedType = derivedType && derivedType !== currentType ? 'string' : currentType;
+            return derivedType;
+        }, null);
+    }
+
+    const enumValues = enumType.enumMembers.map(member => member as string) as Array<string>;
     return {
-      enum: enumType.enumMembers,
-      type: "string",
+        enum: enumType.enumMembers.map(member => member as string) as Array<string>,
+        type: getDerivedTypeFromValues(enumValues),
     };
-  }
+}
 
   private getSwaggerTypeForReferenceType(
     referenceType: ReferenceType

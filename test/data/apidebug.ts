@@ -1,32 +1,21 @@
-import { POST, Path } from "typescript-rest";
+import { POST, Path, QueryParam, Return } from "typescript-rest";
+import { TestInterface } from "./TestInterface";
 
-interface End {
-  id: string;
-}
 
-export interface EndArrayRenamed extends Array<End> {}
-
-interface Error {
-  text: string;
-}
-
-interface Deep<C, D> {
-  data: C;
-  error: D;
-}
-
-interface GenericA<A, B = boolean> {
-  d: Deep<string, string>;
-  deep: A;
-  error: B;
+enum TestNumericEnum {
+  Option1,
+  Option2,
 }
 
 @Path("type")
 export class TypeEndpoint {
   @Path("obj")
   @POST
-  public testPostObject(data: GenericA<Deep<End[], Error>>) {
-    return data;
+  public testPostObject(
+    // data: TestInterface,
+    @QueryParam("query") query: TestNumericEnum,
+  ) {
+    return new Return.NewResource("location", query);
   }
 }
 type Unpack<T> = {
@@ -38,5 +27,7 @@ type UnpackAlt<T> = {
 } & {};
 
 type __Simplify<T> = { [KeyType in keyof T]: T[KeyType] } & {};
+
+type a = __Simplify<TestInterface>;
 
 // type C = Unpack<GenericA<Deep<End[], Error>, Error>>;
