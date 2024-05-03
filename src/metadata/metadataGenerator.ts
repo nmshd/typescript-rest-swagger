@@ -53,10 +53,10 @@ export class MetadataGenerator {
       if (sf.fileName.includes("node_modules")) return;
 
       let matchTargetFile = this.targetFiles.some((targetFile) => {
-        return relative(process.cwd(),sf.fileName).includes(targetFile);
-      })
+        return relative(process.cwd(), sf.fileName).includes(targetFile);
+      });
 
-      if(!matchTargetFile) return;
+      if (!matchTargetFile) return;
 
       let addNodes = (node: ts.Node) => {
         this.nodes.push(node);
@@ -190,6 +190,7 @@ export interface Security {
 
 export interface Type {
   typeName: string;
+  simpleTypeName?: string;
   typeArgument?: Type;
 }
 

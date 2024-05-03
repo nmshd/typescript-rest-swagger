@@ -1,4 +1,5 @@
 import * as _ from "lodash";
+import { dirname } from "path";
 import * as ts from "typescript";
 import { getDecoratorName } from "../utils/decoratorUtils";
 import { getFirstMatchingJSDocTagName } from "../utils/jsDocUtils";
@@ -88,38 +89,20 @@ export function resolveType(
     );
   }
 
-  let typeReference = typeNode as ts.TypeReferenceNode;
-  let typeNameNode = typeReference.typeName as ts.EntityName;
-  if ("expression" in typeReference) {
-    typeNameNode = typeReference.expression as ts.EntityName;
-  }
-  let typeName = resolveSimpleTypeName(typeNameNode as ts.EntityName);
+  const typeReference = typeNode as ts.TypeReferenceNode;
+  const typeNameNode =
+    "expression" in typeReference
+      ? (typeReference.expression as ts.EntityName)
+      : (typeReference.typeName as ts.EntityName);
+  const typeName = resolveSimpleTypeName(typeNameNode as ts.EntityName);
 
-  if (typeName === "Date") {
-    return getDateType(typeNode);
-  }
-  if (typeName === "Buffer") {
-    return { typeName: "buffer" };
-  }
-  if (typeName === "DownloadBinaryData") {
-    return { typeName: "buffer" };
-  }
-  if (typeName === "DownloadResource") {
-    return { typeName: "buffer" };
-  }
-
-  if (typeName === "Promise") {
-    return resolveType(typeReference.typeArguments[0], genericTypeMap);
-  }
-  if (typeName === "Array") {
-    return {
-      elementType: resolveType(typeReference.typeArguments[0], genericTypeMap),
-      typeName: "array",
-    } as ArrayType;
-  }
-
-  if (typeName === "Record") {
-    return { typeName: "object" };
+  const namedType = resolveSpecialTypesByName(
+    typeName,
+    typeNode,
+    genericTypeMap
+  );
+  if (namedType) {
+    return namedType;
   }
 
   const enumType = getEnumerateType(typeNameNode);
@@ -152,13 +135,14 @@ export function resolveType(
   
   `;
   const tmpSourceFile = MetadataGenerator.current.morph.createSourceFile(
-    tmpFileName,
+    dirname(sourceFile.fileName) + "/" + tmpFileName,
     newTmpSourceFile
   );
 
-  let statement = tmpSourceFile.getStatements().at(-2);
-  let originalStatement = tmpSourceFile.getStatements().at(-1);
+  const statement = tmpSourceFile.getStatements().at(-2);
+  const originalStatement = tmpSourceFile.getStatements().at(-1);
   const type = statement.getType();
+
   if (type.isUnion()) {
     let unionType = {
       types: (
@@ -185,7 +169,20 @@ export function resolveType(
     }
   }
 
-  const typeProperties = type.getProperties();
+  const specialTypeNameAfterReference =
+    type.compilerType.symbol?.escapedName.toString();
+  const checker = MetadataGenerator.current.typeChecker;
+  const typeNodeType = checker.getTypeAtLocation(typeNode);
+  if ("node" in typeNodeType) {
+    const specialTypeAfterReference = resolveSpecialTypesByName(
+      specialTypeNameAfterReference,
+      typeNodeType.node as ts.TypeNode,
+      genericTypeMap
+    );
+    if (specialTypeAfterReference) {
+      return specialTypeAfterReference;
+    }
+  }
 
   const typeArguments = typeReference.typeArguments;
 
@@ -197,13 +194,16 @@ export function resolveType(
       originalType.symbol.declarations[0] as ts.SignatureDeclarationBase
     ).typeParameters;
 
-    const typeParameterNames = typeParameter.map((typeParam) => typeParam.name.getText())
+    const typeParameterNames = typeParameter.map((typeParam) =>
+      typeParam.name.getText()
+    );
 
     typeParameterNames.forEach((param, index) => {
-      typeArgumentsMap[param] = typeArguments[index] ?? typeParameter[index].default;
+      typeArgumentsMap[param] =
+        typeArguments[index] ?? typeParameter[index].default;
     });
   }
-
+  const typeProperties = type.getProperties();
   const properties = typeProperties
     .map((property): Property | undefined => {
       const declaration = property.getDeclarations()[0]
@@ -213,7 +213,10 @@ export function resolveType(
 
         let type;
         if (ts.isTypeReferenceNode(declaration.type)) {
-          type = resolveType(typeArgumentsMap[declaration.type.typeName.getText()] ?? declaration.type);
+          type = resolveType(
+            typeArgumentsMap[declaration.type.typeName.getText()] ??
+              declaration.type
+          );
         } else {
           type = resolveType(declaration.type);
         }
@@ -241,7 +244,8 @@ export function resolveType(
   referenceType = {
     description: "",
     properties,
-    typeName: fullTypeName,
+    typeName: replaceNameText(fullTypeName),
+    simpleTypeName: typeName,
   };
 
   MetadataGenerator.current.morph.removeSourceFile(tmpSourceFile);
@@ -249,6 +253,41 @@ export function resolveType(
   MetadataGenerator.current.addReferenceType(referenceType);
 
   return referenceType;
+}
+
+function resolveSpecialTypesByName(
+  typeName: string,
+  typeNode?: ts.TypeNode,
+  genericTypeMap?: Map<String, ts.TypeNode>
+): Type | undefined {
+  const typeReference = typeNode as ts.TypeReferenceNode;
+  if (typeName === "Date") {
+    return getDateType(typeNode);
+  }
+  if (typeName === "Buffer") {
+    return { typeName: "buffer" };
+  }
+  if (typeName === "DownloadBinaryData") {
+    return { typeName: "buffer" };
+  }
+  if (typeName === "DownloadResource") {
+    return { typeName: "buffer" };
+  }
+
+  if (typeName === "Promise") {
+    return resolveType(typeReference.typeArguments[0], genericTypeMap);
+  }
+  if (typeName === "Array") {
+    return {
+      elementType: resolveType(typeReference.typeArguments[0], genericTypeMap),
+      typeName: "array",
+    } as ArrayType;
+  }
+
+  if (typeName === "Record") {
+    return { typeName: "object" };
+  }
+  return undefined;
 }
 
 function getPrimitiveType(typeNode: ts.TypeNode): Type | undefined {
@@ -409,14 +448,17 @@ function resolveSimpleTypeName(type: ts.EntityName): string {
 }
 
 function getTypeName(typeName: ts.EntityName): string {
-  const text = typeName.parent
-    .getText()
+  return replaceNameText(typeName.parent.getText());
+}
+
+function replaceNameText(text = "") {
+  return text
     .replace(/\</g, "-")
     .replace(/\>/g, "-")
     .replace(/\,/g, ".")
     .replace(/\|/g, "_or_")
+    .replace(/\[\]/g, "Array")
     .replace(/[^A-Z|a-z|0-9|_|\-|.]/g, "");
-  return text;
 }
 
 function getModelTypeProperties(

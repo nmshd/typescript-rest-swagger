@@ -207,7 +207,7 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
   }
 
   private getMethodSuccessResponseData(type: Type): ResponseData {
-    switch (type.typeName) {
+    switch (type.simpleTypeName) {
       case "void":
         return { status: "204", type: type };
       case "NewResource":

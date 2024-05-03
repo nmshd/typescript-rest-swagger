@@ -134,7 +134,7 @@ class MethodGenerator extends endpointGenerator_1.EndpointGenerator {
         };
     }
     getMethodSuccessResponseData(type) {
-        switch (type.typeName) {
+        switch (type.simpleTypeName) {
             case "void":
                 return { status: "204", type: type };
             case "NewResource":

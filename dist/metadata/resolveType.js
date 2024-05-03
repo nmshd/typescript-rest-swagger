@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.resolveImports = exports.getLiteralValue = exports.getCommonPrimitiveAndArrayUnionType = exports.getSuperClass = exports.resolveType = void 0;
 const _ = require("lodash");
+const path_1 = require("path");
 const ts = require("typescript");
 const decoratorUtils_1 = require("../utils/decoratorUtils");
 const jsDocUtils_1 = require("../utils/jsDocUtils");
@@ -52,12 +53,124 @@ function resolveType(typeNode, genericTypeMap) {
         typeNode.kind !== ts.SyntaxKind.ExpressionStatement) {
         throw new Error(`Unknown type: ${ts.SyntaxKind[typeNode.kind]} with name ${typeNode.getText()}`);
     }
-    let typeReference = typeNode;
-    let typeNameNode = typeReference.typeName;
-    if ("expression" in typeReference) {
-        typeNameNode = typeReference.expression;
+    const typeReference = typeNode;
+    const typeNameNode = "expression" in typeReference
+        ? typeReference.expression
+        : typeReference.typeName;
+    const typeName = resolveSimpleTypeName(typeNameNode);
+    const namedType = resolveSpecialTypesByName(typeName, typeNode, genericTypeMap);
+    if (namedType) {
+        return namedType;
     }
-    let typeName = resolveSimpleTypeName(typeNameNode);
+    const enumType = getEnumerateType(typeNameNode);
+    if (enumType) {
+        return enumType;
+    }
+    let referenceType;
+    let parent = typeNode;
+    while (!ts.isSourceFile(parent)) {
+        parent = parent.parent;
+    }
+    let sourceFile = parent;
+    let tmpFileName = _.uniqueId("__tmp_") + ".ts";
+    let fullTypeName = typeNode.getText();
+    const newTmpSourceFile = `
+  
+  ${sourceFile.getFullText()}
+  
+  type __Simplify<T> = { [KeyType in keyof T]: T[KeyType] } & {};
+  
+  type __Result = __Simplify<${fullTypeName}>;
+
+  type __Original = ${fullTypeName};
+  
+  `;
+    const tmpSourceFile = metadataGenerator_1.MetadataGenerator.current.morph.createSourceFile((0, path_1.dirname)(sourceFile.fileName) + "/" + tmpFileName, newTmpSourceFile);
+    const statement = tmpSourceFile.getStatements().at(-2);
+    const originalStatement = tmpSourceFile.getStatements().at(-1);
+    const type = statement.getType();
+    if (type.isUnion()) {
+        let unionType = {
+            types: originalStatement.getType().compilerType.aliasSymbol
+                .declarations[0].type.types
+                .map((t) => {
+                return resolveType(t);
+            })
+                .filter((p) => p !== undefined),
+            typeName: typeName,
+        };
+        return unionType;
+    }
+    if (!type.isObject()) {
+        const declaration = metadataGenerator_1.MetadataGenerator.current.typeChecker.getSymbolAtLocation(typeNameNode)
+            .declarations[0];
+        if ("type" in declaration) {
+            return resolveType(declaration.type);
+        }
+    }
+    const specialTypeNameAfterReference = type.compilerType.symbol?.escapedName.toString();
+    const checker = metadataGenerator_1.MetadataGenerator.current.typeChecker;
+    const typeNodeType = checker.getTypeAtLocation(typeNode);
+    if ("node" in typeNodeType) {
+        const specialTypeAfterReference = resolveSpecialTypesByName(specialTypeNameAfterReference, typeNodeType.node, genericTypeMap);
+        if (specialTypeAfterReference) {
+            return specialTypeAfterReference;
+        }
+    }
+    const typeArguments = typeReference.typeArguments;
+    const originalType = metadataGenerator_1.MetadataGenerator.current.typeChecker.getTypeAtLocation(typeReference);
+    const typeArgumentsMap = {};
+    if (typeArguments?.length > 0) {
+        const typeParameter = originalType.symbol.declarations[0].typeParameters;
+        const typeParameterNames = typeParameter.map((typeParam) => typeParam.name.getText());
+        typeParameterNames.forEach((param, index) => {
+            typeArgumentsMap[param] =
+                typeArguments[index] ?? typeParameter[index].default;
+        });
+    }
+    const typeProperties = type.getProperties();
+    const properties = typeProperties
+        .map((property) => {
+        const declaration = property.getDeclarations()[0]
+            .compilerNode;
+        if (declaration.kind) {
+            const name = property.getName();
+            let type;
+            if (ts.isTypeReferenceNode(declaration.type)) {
+                type = resolveType(typeArgumentsMap[declaration.type.typeName.getText()] ??
+                    declaration.type);
+            }
+            else {
+                type = resolveType(declaration.type);
+            }
+            const questionMark = !!declaration.questionToken;
+            const undefinedUnion = declaration.type.kind === ts.SyntaxKind.UnionType &&
+                declaration.type.types.some((t) => t.kind === ts.SyntaxKind.UndefinedKeyword);
+            const required = !questionMark && !undefinedUnion;
+            // MetadataGenerator.current.morph.removeSourceFile(tmpSourceFile);
+            return {
+                description: "",
+                name: name,
+                required: required,
+                type,
+            };
+        }
+        return undefined;
+    })
+        .filter((p) => p !== undefined || p.type.typeName === "void");
+    referenceType = {
+        description: "",
+        properties,
+        typeName: replaceNameText(fullTypeName),
+        simpleTypeName: typeName,
+    };
+    metadataGenerator_1.MetadataGenerator.current.morph.removeSourceFile(tmpSourceFile);
+    metadataGenerator_1.MetadataGenerator.current.addReferenceType(referenceType);
+    return referenceType;
+}
+exports.resolveType = resolveType;
+function resolveSpecialTypesByName(typeName, typeNode, genericTypeMap) {
+    const typeReference = typeNode;
     if (typeName === "Date") {
         return getDateType(typeNode);
     }
@@ -82,83 +195,8 @@ function resolveType(typeNode, genericTypeMap) {
     if (typeName === "Record") {
         return { typeName: "object" };
     }
-    const enumType = getEnumerateType(typeNameNode);
-    if (enumType) {
-        return enumType;
-    }
-    let referenceType;
-    let parent = typeNode;
-    while (!ts.isSourceFile(parent)) {
-        parent = parent.parent;
-    }
-    let sourceFile = parent;
-    let tmpFileName = _.uniqueId("__tmp_") + ".ts";
-    let fullTypeName = typeNode.getText();
-    const tmpSourceFile = metadataGenerator_1.MetadataGenerator.current.morph.createSourceFile(tmpFileName, `
-  
-  ${sourceFile.getFullText()}
-  
-  type __Simplify<T> = { [KeyType in keyof T]: T[KeyType] } & {};
-  
-  type __Result = __Simplify<${fullTypeName}>;
-
-  type __Original = ${fullTypeName};
-  
-  `);
-    let statement = tmpSourceFile.getStatements().at(-2);
-    let originalStatement = tmpSourceFile.getStatements().at(-1);
-    const type = statement.getType();
-    if (type.isUnion()) {
-        let unionType = {
-            types: originalStatement.getType().compilerType.aliasSymbol
-                .declarations[0].type.types
-                .map((t) => {
-                return resolveType(t);
-            })
-                .filter((p) => p !== undefined),
-            typeName: typeName,
-        };
-        return unionType;
-    }
-    if (!type.isObject()) {
-        const declaration = metadataGenerator_1.MetadataGenerator.current.typeChecker.getSymbolAtLocation(typeNameNode)
-            .declarations[0];
-        if ("type" in declaration) {
-            return resolveType(declaration.type);
-        }
-    }
-    const typeProperties = type.getProperties();
-    const properties = typeProperties
-        .map((property) => {
-        let declaration = property.getDeclarations()[0]
-            .compilerNode;
-        if (declaration.kind) {
-            const name = property.getName();
-            const type = resolveType(declaration.type);
-            const questionMark = !!declaration.questionToken;
-            const undefinedUnion = (declaration.type.kind === ts.SyntaxKind.UnionType &&
-                declaration.type.types.some((t) => t.kind === ts.SyntaxKind.UndefinedKeyword));
-            const required = !questionMark && !undefinedUnion;
-            return {
-                description: "",
-                name: name,
-                required: required,
-                type,
-            };
-        }
-        return undefined;
-    })
-        .filter((p) => p !== undefined || p.type.typeName === "void");
-    referenceType = {
-        description: "",
-        properties,
-        typeName: fullTypeName,
-    };
-    metadataGenerator_1.MetadataGenerator.current.morph.removeSourceFile(tmpSourceFile);
-    metadataGenerator_1.MetadataGenerator.current.addReferenceType(referenceType);
-    return referenceType;
+    return undefined;
 }
-exports.resolveType = resolveType;
 function getPrimitiveType(typeNode) {
     const primitiveType = syntaxKindMap[typeNode.kind];
     if (!primitiveType) {
@@ -290,14 +328,16 @@ function resolveSimpleTypeName(type) {
     return qualifiedType.right.text;
 }
 function getTypeName(typeName) {
-    const text = typeName.parent
-        .getText()
+    return replaceNameText(typeName.parent.getText());
+}
+function replaceNameText(text = "") {
+    return text
         .replace(/\</g, "-")
         .replace(/\>/g, "-")
         .replace(/\,/g, ".")
         .replace(/\|/g, "_or_")
+        .replace(/\[\]/g, "Array")
         .replace(/[^A-Z|a-z|0-9|_|\-|.]/g, "");
-    return text;
 }
 function getModelTypeProperties(node, genericTypes) {
     if (node.kind === ts.SyntaxKind.TypeLiteral ||

@@ -42,7 +42,7 @@ interface End {
   id: string;
 }
 
-export interface EndArrayRenamed extends Array<End> {}
+type EndArrayRenamed = Array<End>
 
 interface Error {
   text: string;
