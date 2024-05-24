@@ -288,7 +288,6 @@ export class SpecGenerator {
     return pathMethod;
   }
 
-
   private buildParameter(parameter: Parameter): OpenAPIV3.ParameterObject {
     const swaggerParameter: OpenAPIV3.ParameterObject = {
       description: parameter.description,
@@ -352,12 +351,12 @@ export class SpecGenerator {
     return operation;
   }
 
-  private getMimeType(swaggerType: Schema) {
-    if (isReferenceObject(swaggerType)) {
-      return "application/json";
-    }
+  private getMimeType(swaggerType?: Schema) {
     if (swaggerType === undefined) {
       return undefined;
+    }
+    if (isReferenceObject(swaggerType)) {
+      return "application/json";
     }
 
     if (swaggerType.type === "array" || swaggerType.type === "object") {
@@ -382,8 +381,6 @@ export class SpecGenerator {
     }`;
   }
 
-  private getSwaggerType(type: Type): Schema
-  private getSwaggerType(type: {typeName:"void"}): undefined
   private getSwaggerType(type: Type): Schema | undefined {
     if (type.typeName === "void") {
       return undefined;
@@ -410,7 +407,9 @@ export class SpecGenerator {
 
     const unionType = type as UnionType;
     if (unionType.types && unionType.types.length > 0) {
-      let map = unionType.types.map((t) => this.getSwaggerType(t));
+      let map = unionType.types
+        .map((t) => this.getSwaggerType(t))
+        .filter((t) => t !== undefined) as Schema[];
 
       let [enums, nonEnums] = _.partition(map, (m) => {
         return m.hasOwnProperty("enum");
@@ -427,8 +426,8 @@ export class SpecGenerator {
           map.push({ type: type, enum: enumValues });
         }
       );
-      if(map.length === 1) {
-        return map[0]
+      if (map.length === 1) {
+        return map[0];
       }
 
       return { oneOf: map };
@@ -453,7 +452,7 @@ export class SpecGenerator {
       integer: { type: "integer", format: "int32" },
       long: { type: "integer", format: "int64" },
       object: { type: "object" },
-      string: { type: "string" }
+      string: { type: "string" },
     };
 
     return typeMap[type.typeName];
@@ -466,26 +465,36 @@ export class SpecGenerator {
     };
   }
 
-  private getSwaggerTypeForArrayType(arrayType: ArrayType): Schema {
-    return { type: "array", items: this.getSwaggerType(arrayType.elementType) };
+  private getSwaggerTypeForArrayType(arrayType: ArrayType): Schema | undefined {
+    if (!arrayType.elementType) {
+      return undefined;
+    }
+
+    return { type: "array", items: this.getSwaggerType(arrayType.elementType)! };
   }
 
   private getSwaggerTypeForEnumType(enumType: EnumerateType): Schema {
-
-    function getDerivedTypeFromValues(values: Array<any>): OpenAPIV3.NonArraySchemaObjectType {
-        return values.reduce((derivedType: string, item) => {
-            const currentType = typeof item;
-            derivedType = derivedType && derivedType !== currentType ? 'string' : currentType;
-            return derivedType;
-        }, null);
+    function getDerivedTypeFromValues(
+      values: Array<any>
+    ): OpenAPIV3.NonArraySchemaObjectType {
+      return values.reduce((derivedType: string, item) => {
+        const currentType = typeof item;
+        derivedType =
+          derivedType && derivedType !== currentType ? "string" : currentType;
+        return derivedType;
+      }, null);
     }
 
-    const enumValues = enumType.enumMembers.map(member => member as string) as Array<string>;
+    const enumValues = enumType.enumMembers.map(
+      (member) => member as string
+    ) as Array<string>;
     return {
-        enum: enumType.enumMembers.map(member => member as string) as Array<string>,
-        type: getDerivedTypeFromValues(enumValues),
+      enum: enumType.enumMembers.map(
+        (member) => member as string
+      ) as Array<string>,
+      type: getDerivedTypeFromValues(enumValues),
     };
-}
+  }
 
   private getSwaggerTypeForReferenceType(
     referenceType: ReferenceType
