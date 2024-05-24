@@ -267,11 +267,11 @@ class SpecGenerator {
         return operation;
     }
     getMimeType(swaggerType) {
-        if ((0, swagger_1.isReferenceObject)(swaggerType)) {
-            return "application/json";
-        }
         if (swaggerType === undefined) {
             return undefined;
+        }
+        if ((0, swagger_1.isReferenceObject)(swaggerType)) {
+            return "application/json";
         }
         if (swaggerType.type === "array" || swaggerType.type === "object") {
             return "application/json";
@@ -310,7 +310,9 @@ class SpecGenerator {
         }
         const unionType = type;
         if (unionType.types && unionType.types.length > 0) {
-            let map = unionType.types.map((t) => this.getSwaggerType(t));
+            let map = unionType.types
+                .map((t) => this.getSwaggerType(t))
+                .filter((t) => t !== undefined);
             let [enums, nonEnums] = _.partition(map, (m) => {
                 return m.hasOwnProperty("enum");
             });
@@ -343,7 +345,7 @@ class SpecGenerator {
             integer: { type: "integer", format: "int32" },
             long: { type: "integer", format: "int64" },
             object: { type: "object" },
-            string: { type: "string" }
+            string: { type: "string" },
         };
         return typeMap[type.typeName];
     }
@@ -354,19 +356,23 @@ class SpecGenerator {
         };
     }
     getSwaggerTypeForArrayType(arrayType) {
+        if (!arrayType.elementType) {
+            return undefined;
+        }
         return { type: "array", items: this.getSwaggerType(arrayType.elementType) };
     }
     getSwaggerTypeForEnumType(enumType) {
         function getDerivedTypeFromValues(values) {
             return values.reduce((derivedType, item) => {
                 const currentType = typeof item;
-                derivedType = derivedType && derivedType !== currentType ? 'string' : currentType;
+                derivedType =
+                    derivedType && derivedType !== currentType ? "string" : currentType;
                 return derivedType;
             }, null);
         }
-        const enumValues = enumType.enumMembers.map(member => member);
+        const enumValues = enumType.enumMembers.map((member) => member);
         return {
-            enum: enumType.enumMembers.map(member => member),
+            enum: enumType.enumMembers.map((member) => member),
             type: getDerivedTypeFromValues(enumValues),
         };
     }
