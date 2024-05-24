@@ -19,7 +19,7 @@ export class ParameterGenerator {
     private readonly genericTypeMap?: Map<String, ts.TypeNode>
   ) {}
 
-  public generate(): Parameter {
+  public generate(): Parameter | undefined {
     const decoratorName = getDecoratorName(this.parameter, (identifier) =>
       this.supportParameterDecorator(identifier.text)
     );
@@ -203,7 +203,7 @@ export class ParameterGenerator {
   }
   isRequired(parameter: ts.ParameterDeclaration): boolean {
     let isUndefinedUnion =
-      parameter.type.kind === ts.SyntaxKind.UnionType &&
+      parameter.type?.kind === ts.SyntaxKind.UnionType &&
       (parameter.type as ts.UnionTypeNode).types.some(
         (t) => t.kind === ts.SyntaxKind.UndefinedKeyword
       );

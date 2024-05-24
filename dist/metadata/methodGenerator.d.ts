@@ -6,7 +6,7 @@ export declare class MethodGenerator extends EndpointGenerator<ts.MethodDeclarat
     private readonly genericTypeMap?;
     private method;
     private path;
-    constructor(node: ts.MethodDeclaration, controllerPath: string, genericTypeMap?: Map<String, ts.TypeNode>);
+    constructor(node: ts.MethodDeclaration, controllerPath: string, genericTypeMap?: Map<String, ts.TypeNode> | undefined);
     isValid(): boolean;
     getMethodName(): string;
     generate(): Method;

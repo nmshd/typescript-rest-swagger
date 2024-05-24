@@ -251,7 +251,7 @@ export class SpecGenerator {
     noBodyParameter
       .filter((p) => p.in === "param")
       .forEach((p) => {
-        pathMethod.parameters.push(
+        pathMethod.parameters?.push(
           this.buildParameter({
             description: p.description,
             in: "query",
@@ -338,7 +338,7 @@ export class SpecGenerator {
         const mimeType = this.getMimeType(swaggerType);
         const codeObject = operation.responses[res.status];
         if (!isReferenceObject(codeObject)) {
-          if (swaggerType) {
+          if (swaggerType && codeObject.content && mimeType) {
             codeObject.content[mimeType] = {
               schema: swaggerType,
             };
@@ -382,6 +382,8 @@ export class SpecGenerator {
     }`;
   }
 
+  private getSwaggerType(type: Type): Schema
+  private getSwaggerType(type: {typeName:"void"}): undefined
   private getSwaggerType(type: Type): Schema | undefined {
     if (type.typeName === "void") {
       return undefined;
@@ -451,8 +453,7 @@ export class SpecGenerator {
       integer: { type: "integer", format: "int32" },
       long: { type: "integer", format: "int64" },
       object: { type: "object" },
-      string: { type: "string" },
-      void: undefined,
+      string: { type: "string" }
     };
 
     return typeMap[type.typeName];

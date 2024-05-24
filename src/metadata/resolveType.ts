@@ -63,10 +63,7 @@ export function resolveType(
   }
 
   if (typeNode.kind === ts.SyntaxKind.LiteralType) {
-    return resolveLiteralType(
-      (typeNode as ts.LiteralTypeNode).literal,
-      genericTypeMap
-    );
+    return resolveLiteralType((typeNode as ts.LiteralTypeNode).literal);
   }
 
   if (typeNode.kind === ts.SyntaxKind.UnionType) {
@@ -139,8 +136,8 @@ export function resolveType(
     newTmpSourceFile
   );
 
-  const statement = tmpSourceFile.getStatements().at(-2);
-  const originalStatement = tmpSourceFile.getStatements().at(-1);
+  const statement = tmpSourceFile.getStatements().at(-2)!;
+  const originalStatement = tmpSourceFile.getStatements().at(-1)!;
   const type = statement.getType();
 
   if (type.isUnion()) {
@@ -148,7 +145,7 @@ export function resolveType(
       types: (
         (
           originalStatement.getType().compilerType.aliasSymbol
-            .declarations[0] as ts.TypeAliasDeclaration
+            ?.declarations?.[0] as ts.TypeAliasDeclaration
         ).type as ts.UnionTypeNode
       ).types
         .map((t) => {
@@ -163,9 +160,25 @@ export function resolveType(
   if (!type.isObject()) {
     const declaration =
       MetadataGenerator.current.typeChecker.getSymbolAtLocation(typeNameNode)
-        .declarations[0];
+        ?.declarations?.[0];
+    if (!declaration) {
+      throw new Error("Could not resolve declaration of Object");
+    }
     if ("type" in declaration) {
       return resolveType(declaration.type as ts.TypeNode);
+    }
+    let originalType = originalStatement.getType();
+
+    switch (true) {
+      case originalType.isString():
+        return { typeName: "string" };
+      case originalType.isNumber():
+        return { typeName: "double" };
+      case originalType.isBoolean():
+        return { typeName: "boolean" };
+      case originalType.isNull():
+      case originalType.isUndefined():
+        return { typeName: "void" };
     }
   }
 
@@ -189,18 +202,18 @@ export function resolveType(
   const originalType =
     MetadataGenerator.current.typeChecker.getTypeAtLocation(typeReference);
   const typeArgumentsMap: Record<string, any> = {};
-  if (typeArguments?.length > 0) {
+  if (typeArguments?.length ?? 0 > 0) {
     const typeParameter = (
-      originalType.symbol.declarations[0] as ts.SignatureDeclarationBase
+      originalType.symbol.declarations?.[0] as ts.SignatureDeclarationBase
     ).typeParameters;
 
-    const typeParameterNames = typeParameter.map((typeParam) =>
+    const typeParameterNames = typeParameter?.map((typeParam) =>
       typeParam.name.getText()
     );
 
-    typeParameterNames.forEach((param, index) => {
+    typeParameterNames?.forEach((param, index) => {
       typeArgumentsMap[param] =
-        typeArguments[index] ?? typeParameter[index].default;
+        typeArguments?.[index] ?? typeParameter?.[index].default;
     });
   }
   const typeProperties = type.getProperties();
@@ -240,7 +253,7 @@ export function resolveType(
       }
       return undefined;
     })
-    .filter((p) => p !== undefined || p.type.typeName === "void");
+    .filter((p) => p && p.type.typeName !== "void") as Property[];
   referenceType = {
     description: "",
     properties,
@@ -257,7 +270,7 @@ export function resolveType(
 
 function resolveSpecialTypesByName(
   typeName: string,
-  typeNode?: ts.TypeNode,
+  typeNode: ts.TypeNode,
   genericTypeMap?: Map<String, ts.TypeNode>
 ): Type | undefined {
   const typeReference = typeNode as ts.TypeReferenceNode;
@@ -275,11 +288,14 @@ function resolveSpecialTypesByName(
   }
 
   if (typeName === "Promise") {
-    return resolveType(typeReference.typeArguments[0], genericTypeMap);
+    return resolveType(typeReference.typeArguments?.[0], genericTypeMap);
   }
   if (typeName === "Array") {
     return {
-      elementType: resolveType(typeReference.typeArguments[0], genericTypeMap),
+      elementType: resolveType(
+        typeReference.typeArguments?.[0],
+        genericTypeMap
+      ),
       typeName: "array",
     } as ArrayType;
   }
@@ -352,7 +368,7 @@ function getEnumerateType(
 ): EnumerateType | undefined {
   let enumDeclaration =
     MetadataGenerator.current.typeChecker.getSymbolAtLocation(typeNameNode)
-      ?.declarations[0] as ts.EnumDeclaration;
+      ?.declarations?.[0] as ts.EnumDeclaration;
   enumDeclaration = resolveImports(enumDeclaration);
   if (enumDeclaration?.kind !== ts.SyntaxKind.EnumDeclaration) {
     return undefined;
@@ -428,10 +444,7 @@ function getInlineObjectType(typeNode: ts.TypeNode): ObjectType {
   return type;
 }
 
-function resolveLiteralType(
-  literalTypeNode: any,
-  genericTypeMap: Map<String, ts.TypeNode>
-): EnumerateType {
+function resolveLiteralType(literalTypeNode: any): EnumerateType {
   return {
     enumMembers: [literalTypeNode.text],
     typeName: "enum",
@@ -698,11 +711,14 @@ export function getSuperClass(
     );
     if (filteredClauses.length > 0) {
       const clause: ts.HeritageClause = filteredClauses[0];
-      if (clause.types && clause.types.length) {
+      if (clause.types && clause.types.length > 0) {
         let type = MetadataGenerator.current.typeChecker.getSymbolAtLocation(
           clause.types[0].expression
-        ).declarations[0] as UsableDeclaration;
+        )?.declarations?.[0] as UsableDeclaration | undefined;
         type = resolveImports(type);
+        if (!type) {
+          throw new Error("Could not resolve type of extend");
+        }
         return {
           type: type,
           typeArguments: resolveTypeArguments(
@@ -799,14 +815,16 @@ export function getLiteralValue(expression: ts.Expression): any {
   return;
 }
 
-export function resolveImports<T>(node: T) {
-  let nodeAsImportSpecifier = node as ts.ImportSpecifier;
+export function resolveImports<T>(node: T): T {
+  const nodeAsImportSpecifier = node as ts.ImportSpecifier;
+  const checker = MetadataGenerator.current.typeChecker;
   if (nodeAsImportSpecifier?.kind === ts.SyntaxKind.ImportSpecifier) {
-    let checker = MetadataGenerator.current.typeChecker;
     const symbol = checker.getSymbolAtLocation(nodeAsImportSpecifier.name);
-    const aliasedSymbol = checker.getAliasedSymbol(symbol);
-    const declaration = aliasedSymbol.getDeclarations()[0];
-    return declaration as T;
+    if (symbol) {
+      const aliasedSymbol = checker.getAliasedSymbol(symbol);
+      const declaration = aliasedSymbol.getDeclarations()?.[0];
+      return declaration as T;
+    }
   }
   return node;
 }

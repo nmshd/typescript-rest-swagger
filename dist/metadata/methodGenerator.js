@@ -83,8 +83,8 @@ class MethodGenerator extends endpointGenerator_1.EndpointGenerator {
             }
         })
             .filter((p) => p && p.in !== "context" && p.in !== "cookie");
-        const bodyParameters = parameters.filter((p) => p.in === "body");
-        const formParameters = parameters.filter((p) => p.in === "formData");
+        const bodyParameters = parameters.filter((p) => p && p.in === "body");
+        const formParameters = parameters.filter((p) => p && p.in === "formData");
         if (bodyParameters.length > 1) {
             throw new Error(`Only one body parameter allowed in '${this.getCurrentLocation()}' method.`);
         }

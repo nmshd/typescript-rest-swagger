@@ -152,7 +152,7 @@ class ParameterGenerator {
         };
     }
     isRequired(parameter) {
-        let isUndefinedUnion = parameter.type.kind === ts.SyntaxKind.UnionType &&
+        let isUndefinedUnion = parameter.type?.kind === ts.SyntaxKind.UnionType &&
             parameter.type.types.some((t) => t.kind === ts.SyntaxKind.UndefinedKeyword);
         return (!parameter.questionToken && !parameter.initializer && !isUndefinedUnion);
     }

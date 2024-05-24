@@ -61,7 +61,7 @@ export class ControllerGenerator extends EndpointGenerator<ts.ClassDeclaration> 
   }
 
   protected getCurrentLocation(): string {
-    return (this.node as ts.ClassDeclaration).name.text;
+    return (this.node as ts.ClassDeclaration).name?.text ?? "";
   }
 
   private buildMethods() {

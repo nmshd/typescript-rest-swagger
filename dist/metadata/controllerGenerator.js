@@ -45,7 +45,7 @@ class ControllerGenerator extends endpointGenerator_1.EndpointGenerator {
         return controllerMetadata;
     }
     getCurrentLocation() {
-        return this.node.name.text;
+        return this.node.name?.text ?? "";
     }
     buildMethods() {
         let result = [];

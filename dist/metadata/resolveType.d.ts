@@ -5,7 +5,7 @@ export declare function resolveType(typeNode?: ts.TypeNode, genericTypeMap?: Map
 export declare function getSuperClass(node: ts.ClassDeclaration, typeArguments?: Map<String, ts.TypeNode>): {
     type: UsableDeclaration;
     typeArguments: Map<String, ts.TypeNode>;
-};
+} | undefined;
 /**
  * Used to identify union types of a primitive and array of the same primitive, e.g. `string | string[]`
  */

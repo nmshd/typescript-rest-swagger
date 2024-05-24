@@ -179,7 +179,7 @@ class SpecGenerator {
         noBodyParameter
             .filter((p) => p.in === "param")
             .forEach((p) => {
-            pathMethod.parameters.push(this.buildParameter({
+            pathMethod.parameters?.push(this.buildParameter({
                 description: p.description,
                 in: "query",
                 name: p.name,
@@ -253,7 +253,7 @@ class SpecGenerator {
                 const mimeType = this.getMimeType(swaggerType);
                 const codeObject = operation.responses[res.status];
                 if (!(0, swagger_1.isReferenceObject)(codeObject)) {
-                    if (swaggerType) {
+                    if (swaggerType && codeObject.content && mimeType) {
                         codeObject.content[mimeType] = {
                             schema: swaggerType,
                         };
@@ -343,8 +343,7 @@ class SpecGenerator {
             integer: { type: "integer", format: "int32" },
             long: { type: "integer", format: "int64" },
             object: { type: "object" },
-            string: { type: "string" },
-            void: undefined,
+            string: { type: "string" }
         };
         return typeMap[type.typeName];
     }
@@ -358,9 +357,17 @@ class SpecGenerator {
         return { type: "array", items: this.getSwaggerType(arrayType.elementType) };
     }
     getSwaggerTypeForEnumType(enumType) {
+        function getDerivedTypeFromValues(values) {
+            return values.reduce((derivedType, item) => {
+                const currentType = typeof item;
+                derivedType = derivedType && derivedType !== currentType ? 'string' : currentType;
+                return derivedType;
+            }, null);
+        }
+        const enumValues = enumType.enumMembers.map(member => member);
         return {
-            enum: enumType.enumMembers,
-            type: "string",
+            enum: enumType.enumMembers.map(member => member),
+            type: getDerivedTypeFromValues(enumValues),
         };
     }
     getSwaggerTypeForReferenceType(referenceType) {

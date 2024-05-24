@@ -9,7 +9,7 @@ export declare abstract class EndpointGenerator<T extends ts.Node> {
     protected getSecurity(): {
         name: any;
         scopes: string[];
-    }[];
+    }[] | undefined;
     protected handleRolesArray(argument: ts.ArrayLiteralExpression): Array<string>;
     protected getExamplesValue(argument: any): any;
     protected getInitializerValue(initializer: any): any;

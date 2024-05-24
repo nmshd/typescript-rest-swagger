@@ -10,6 +10,7 @@ import { normalizePath } from "../utils/pathUtils";
 import { EndpointGenerator } from "./endpointGenerator";
 import {
   Method,
+  Parameter,
   ResponseData,
   ResponseType,
   Type
@@ -123,10 +124,10 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
           );
         }
       })
-      .filter((p) => p && p.in !== "context" && p.in !== "cookie");
+      .filter((p) => p && p.in !== "context" && p.in !== "cookie") as Parameter[];
 
-    const bodyParameters = parameters.filter((p) => p.in === "body");
-    const formParameters = parameters.filter((p) => p.in === "formData");
+    const bodyParameters = parameters.filter((p) => p && p.in === "body");
+    const formParameters = parameters.filter((p) => p && p.in === "formData");
 
     if (bodyParameters.length > 1) {
       throw new Error(
