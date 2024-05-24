@@ -90,7 +90,7 @@ export class MetadataGenerator {
     this.referenceTypes[referenceType.typeName] = referenceType;
   }
 
-  public getReferenceType(typeName: string) {
+  public getReferenceType(typeName: string): ReferenceType | undefined {
     return this.referenceTypes[typeName];
   }
   public getReferenceTypes() {

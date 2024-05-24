@@ -15,7 +15,7 @@ export declare class MetadataGenerator {
     generate(): Metadata;
     TypeChecker(): ts.TypeChecker;
     addReferenceType(referenceType: ReferenceType): void;
-    getReferenceType(typeName: string): ReferenceType;
+    getReferenceType(typeName: string): ReferenceType | undefined;
     getReferenceTypes(): {
         [typeName: string]: ReferenceType;
     };

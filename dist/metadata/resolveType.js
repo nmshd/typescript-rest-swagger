@@ -74,6 +74,11 @@ function resolveType(typeNode, genericTypeMap) {
     let sourceFile = parent;
     let tmpFileName = _.uniqueId("__tmp_") + ".ts";
     let fullTypeName = typeNode.getText();
+    const fullRefTypeName = replaceNameText(fullTypeName);
+    const refType = metadataGenerator_1.MetadataGenerator.current.getReferenceType(fullRefTypeName);
+    if (refType) {
+        return refType;
+    }
     const newTmpSourceFile = `
   
   ${sourceFile.getFullText()}

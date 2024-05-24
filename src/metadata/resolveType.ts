@@ -120,6 +120,13 @@ export function resolveType(
 
   let fullTypeName = typeNode.getText();
 
+  const fullRefTypeName = replaceNameText(fullTypeName);
+
+  const refType = MetadataGenerator.current.getReferenceType(fullRefTypeName);
+  if(refType){
+    return refType
+  }
+
   const newTmpSourceFile = `
   
   ${sourceFile.getFullText()}
