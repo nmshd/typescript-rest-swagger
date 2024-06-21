@@ -205,6 +205,7 @@ export interface UnionType extends Type {
 export interface ReferenceType extends Type {
   description: string;
   properties: Array<Property>;
+  originalFileName: any;
   // additionalProperties?: Array<Property>;
 }
 

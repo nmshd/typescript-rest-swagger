@@ -14,6 +14,8 @@ import {
   UnionType,
 } from "./metadataGenerator";
 
+let timer = 0;
+
 const syntaxKindMap: { [kind: number]: string } = {};
 syntaxKindMap[ts.SyntaxKind.NumberKeyword] = "number";
 syntaxKindMap[ts.SyntaxKind.StringKeyword] = "string";
@@ -109,22 +111,29 @@ export function resolveType(
 
   let referenceType: ReferenceType;
 
-  let parent: any = typeNode;
+  const sourceFile = getSourceFile(typeNode);
 
-  while (!ts.isSourceFile(parent)) {
-    parent = parent.parent;
-  }
-  let sourceFile = parent as ts.SourceFile;
+  const tmpFileName = _.uniqueId("__tmp_") + ".ts";
 
-  let tmpFileName = _.uniqueId("__tmp_") + ".ts";
-
-  let fullTypeName = typeNode.getText();
+  const fullTypeName = typeNode.getText();
 
   const fullRefTypeName = replaceNameText(fullTypeName);
 
   const refType = MetadataGenerator.current.getReferenceType(fullRefTypeName);
-  if(refType){
-    return refType
+
+  const symbol =
+    MetadataGenerator.current.typeChecker.getSymbolAtLocation(typeNameNode);
+
+  let originalDeclarationFileName = sourceFile.fileName;
+  if (symbol) {
+    originalDeclarationFileName =
+      getOriginalSourceFile(symbol) ?? sourceFile.fileName;
+  }
+
+  if (refType && refType?.originalFileName !== originalDeclarationFileName) {
+    throw new Error(`reference type ${fullRefTypeName} with same name but different properties. Please use different names for different types.`)
+  } else if (refType) {
+    return refType;
   }
 
   const newTmpSourceFile = `
@@ -144,7 +153,9 @@ export function resolveType(
   );
 
   const statement = tmpSourceFile.getStatements().at(-2)!;
+
   const originalStatement = tmpSourceFile.getStatements().at(-1)!;
+
   const type = statement.getType();
 
   if (type.isUnion()) {
@@ -165,9 +176,7 @@ export function resolveType(
   }
 
   if (!type.isObject()) {
-    const declaration =
-      MetadataGenerator.current.typeChecker.getSymbolAtLocation(typeNameNode)
-        ?.declarations?.[0];
+    const declaration = symbol?.declarations?.[0];
     if (!declaration) {
       throw new Error("Could not resolve declaration of Object");
     }
@@ -266,6 +275,7 @@ export function resolveType(
     properties,
     typeName: replaceNameText(fullTypeName),
     simpleTypeName: typeName,
+    originalFileName: originalDeclarationFileName,
   };
 
   MetadataGenerator.current.morph.removeSourceFile(tmpSourceFile);
@@ -834,4 +844,24 @@ export function resolveImports<T>(node: T): T {
     }
   }
   return node;
+}
+
+function getSourceFile(node: ts.Node): ts.SourceFile {
+  while (node.kind !== ts.SyntaxKind.SourceFile) {
+    node = node.parent;
+  }
+  return node as ts.SourceFile;
+}
+
+function getOriginalSourceFile(symbol: ts.Symbol) {
+  if (
+    symbol &&
+    symbol?.declarations?.[0].kind === ts.SyntaxKind.ImportSpecifier
+  ) {
+    return MetadataGenerator.current.typeChecker
+      .getAliasedSymbol(symbol)
+      .getDeclarations()?.[0]
+      .getSourceFile().fileName;
+  }
+  return symbol?.declarations?.[0].getSourceFile().fileName;
 }

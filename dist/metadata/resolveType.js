@@ -7,6 +7,7 @@ const ts = require("typescript");
 const decoratorUtils_1 = require("../utils/decoratorUtils");
 const jsDocUtils_1 = require("../utils/jsDocUtils");
 const metadataGenerator_1 = require("./metadataGenerator");
+let timer = 0;
 const syntaxKindMap = {};
 syntaxKindMap[ts.SyntaxKind.NumberKeyword] = "number";
 syntaxKindMap[ts.SyntaxKind.StringKeyword] = "string";
@@ -67,16 +68,21 @@ function resolveType(typeNode, genericTypeMap) {
         return enumType;
     }
     let referenceType;
-    let parent = typeNode;
-    while (!ts.isSourceFile(parent)) {
-        parent = parent.parent;
-    }
-    let sourceFile = parent;
-    let tmpFileName = _.uniqueId("__tmp_") + ".ts";
-    let fullTypeName = typeNode.getText();
+    const sourceFile = getSourceFile(typeNode);
+    const tmpFileName = _.uniqueId("__tmp_") + ".ts";
+    const fullTypeName = typeNode.getText();
     const fullRefTypeName = replaceNameText(fullTypeName);
     const refType = metadataGenerator_1.MetadataGenerator.current.getReferenceType(fullRefTypeName);
-    if (refType) {
+    const symbol = metadataGenerator_1.MetadataGenerator.current.typeChecker.getSymbolAtLocation(typeNameNode);
+    let originalDeclarationFileName = sourceFile.fileName;
+    if (symbol) {
+        originalDeclarationFileName =
+            getOriginalSourceFile(symbol) ?? sourceFile.fileName;
+    }
+    if (refType && refType?.originalFileName !== originalDeclarationFileName) {
+        throw new Error(`reference type ${fullRefTypeName} with same name but different properties. Please use different names for different types.`);
+    }
+    else if (refType) {
         return refType;
     }
     const newTmpSourceFile = `
@@ -107,8 +113,7 @@ function resolveType(typeNode, genericTypeMap) {
         return unionType;
     }
     if (!type.isObject()) {
-        const declaration = metadataGenerator_1.MetadataGenerator.current.typeChecker.getSymbolAtLocation(typeNameNode)
-            ?.declarations?.[0];
+        const declaration = symbol?.declarations?.[0];
         if (!declaration) {
             throw new Error("Could not resolve declaration of Object");
         }
@@ -183,6 +188,7 @@ function resolveType(typeNode, genericTypeMap) {
         properties,
         typeName: replaceNameText(fullTypeName),
         simpleTypeName: typeName,
+        originalFileName: originalDeclarationFileName,
     };
     metadataGenerator_1.MetadataGenerator.current.morph.removeSourceFile(tmpSourceFile);
     metadataGenerator_1.MetadataGenerator.current.addReferenceType(referenceType);
@@ -617,4 +623,20 @@ function resolveImports(node) {
     return node;
 }
 exports.resolveImports = resolveImports;
+function getSourceFile(node) {
+    while (node.kind !== ts.SyntaxKind.SourceFile) {
+        node = node.parent;
+    }
+    return node;
+}
+function getOriginalSourceFile(symbol) {
+    if (symbol &&
+        symbol?.declarations?.[0].kind === ts.SyntaxKind.ImportSpecifier) {
+        return metadataGenerator_1.MetadataGenerator.current.typeChecker
+            .getAliasedSymbol(symbol)
+            .getDeclarations()?.[0]
+            .getSourceFile().fileName;
+    }
+    return symbol?.declarations?.[0].getSourceFile().fileName;
+}
 //# sourceMappingURL=resolveType.js.map
