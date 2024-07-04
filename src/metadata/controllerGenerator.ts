@@ -65,10 +65,24 @@ export class ControllerGenerator extends EndpointGenerator<ts.ClassDeclaration> 
   }
 
   private buildMethods() {
+    let typeArgumentsMap = new Map<String, ts.TypeNode>();
+    if (this.node.typeParameters) {
+      this.node.typeParameters.forEach((typeParameter) => {
+        let constraint =
+          ts.getEffectiveConstraintOfTypeParameter(typeParameter);
+        if (constraint) {
+          typeArgumentsMap.set(
+            typeParameter.name.escapedText.toString(),
+            constraint
+          );
+        }
+      });
+    }
+
     let result: Array<any> = [];
     let targetClass: any = {
       type: this.node,
-      typeArguments: null,
+      typeArguments: typeArgumentsMap,
     };
     while (targetClass) {
       result = _.union(

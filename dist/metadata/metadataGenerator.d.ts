@@ -11,7 +11,7 @@ export declare class MetadataGenerator {
     private debugger;
     morph: Project;
     private targetFiles;
-    constructor(entryFile: string | Array<string>, tsConfigFilePath: string, ignorePaths?: string[] | undefined);
+    constructor(entryFile: string | Array<string>, tsConfigFilePath: string, ignorePaths?: Array<string> | undefined);
     generate(): Metadata;
     TypeChecker(): ts.TypeChecker;
     addReferenceType(referenceType: ReferenceType): void;

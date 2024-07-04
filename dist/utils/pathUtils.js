@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.normalizePath = void 0;
+exports.normalizePath = normalizePath;
 function normalizePath(path) {
     if (!path) {
         return path;
@@ -9,5 +9,4 @@ function normalizePath(path) {
     parts = parts.map((part) => part.startsWith(":") ? `{${part.slice(1)}}` : part);
     return parts.join("/");
 }
-exports.normalizePath = normalizePath;
 //# sourceMappingURL=pathUtils.js.map

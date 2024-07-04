@@ -205,7 +205,7 @@ export class ParameterGenerator {
     let isUndefinedUnion =
       parameter.type?.kind === ts.SyntaxKind.UnionType &&
       (parameter.type as ts.UnionTypeNode).types.some(
-        (t) => t.kind === ts.SyntaxKind.UndefinedKeyword
+        (t:any) => t.kind === ts.SyntaxKind.UndefinedKeyword
       );
     return (
       !parameter.questionToken && !parameter.initializer && !isUndefinedUnion

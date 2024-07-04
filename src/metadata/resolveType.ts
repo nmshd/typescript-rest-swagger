@@ -14,7 +14,6 @@ import {
   UnionType,
 } from "./metadataGenerator";
 
-let timer = 0;
 
 const syntaxKindMap: { [kind: number]: string } = {};
 syntaxKindMap[ts.SyntaxKind.NumberKeyword] = "number";
@@ -94,6 +93,10 @@ export function resolveType(
       ? (typeReference.expression as ts.EntityName)
       : (typeReference.typeName as ts.EntityName);
   const typeName = resolveSimpleTypeName(typeNameNode as ts.EntityName);
+
+  if(genericTypeMap?.has(typeName)) {
+    return resolveType(genericTypeMap.get(typeName));
+  }
 
   const namedType = resolveSpecialTypesByName(
     typeName,

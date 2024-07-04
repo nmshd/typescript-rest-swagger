@@ -6,10 +6,10 @@ interface A<T> extends Test {
 }
 
 @Path("type")
-export class TypeEndpoint {
+export class TypeEndpoint<T extends Test> {
   @Path("obj")
   @POST
-  public testPostObject(body: Test) : A<string> {
+  public testPostObject(body: T) : A<string> {
     return {
       c: "test",
       a: body.a,

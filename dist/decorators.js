@@ -1,6 +1,15 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.IsDouble = exports.IsFloat = exports.IsLong = exports.IsInt = exports.Hidden = exports.Produces = exports.Consumes = exports.Tags = exports.Example = exports.Response = void 0;
+exports.Response = Response;
+exports.Example = Example;
+exports.Tags = Tags;
+exports.Consumes = Consumes;
+exports.Produces = Produces;
+exports.Hidden = Hidden;
+exports.IsInt = IsInt;
+exports.IsLong = IsLong;
+exports.IsFloat = IsFloat;
+exports.IsDouble = IsDouble;
 /**
  * A decorator to document the responses that a given service method can return. It is used to generate
  * documentation for the REST service.
@@ -29,7 +38,6 @@ function Response(name, description, example) {
         return;
     };
 }
-exports.Response = Response;
 /**
  * Used to provide an example of method return to be added into the method response section of the
  * generated documentation for this method.
@@ -52,7 +60,6 @@ function Example(example) {
         return;
     };
 }
-exports.Example = Example;
 /**
  * Add tags for a given method on generated swagger documentation.
  * ```typescript
@@ -72,7 +79,6 @@ function Tags(...values) {
         return;
     };
 }
-exports.Tags = Tags;
 /**
  * Document the method or class comsumes property in generated swagger docs
  */
@@ -81,7 +87,6 @@ function Consumes(...values) {
         return;
     };
 }
-exports.Consumes = Consumes;
 /**
  * Document the method or class produces property in generated swagger docs
  */
@@ -90,7 +95,6 @@ function Produces(...values) {
         return;
     };
 }
-exports.Produces = Produces;
 /**
  * Document the method or class produces property in generated swagger docs
  */
@@ -99,28 +103,24 @@ function Hidden() {
         return;
     };
 }
-exports.Hidden = Hidden;
 /**
  * Document the type of a property or parameter as `integer ($int32)` in generated swagger docs
  */
 function IsInt(target, propertyKey, parameterIndex) {
     return;
 }
-exports.IsInt = IsInt;
 /**
  * Document the type of a property or parameter as `integer ($int64)` in generated swagger docs
  */
 function IsLong(target, propertyKey, parameterIndex) {
     return;
 }
-exports.IsLong = IsLong;
 /**
  * Document the type of a property or parameter as `number ($float)` in generated swagger docs
  */
 function IsFloat(target, propertyKey, parameterIndex) {
     return;
 }
-exports.IsFloat = IsFloat;
 /**
  * Document the type of a property or parameter as `number ($double)` in generated swagger docs.
  * This is the default for `number` types without a specifying decorator.
@@ -128,5 +128,4 @@ exports.IsFloat = IsFloat;
 function IsDouble(target, propertyKey, parameterIndex) {
     return;
 }
-exports.IsDouble = IsDouble;
 //# sourceMappingURL=decorators.js.map

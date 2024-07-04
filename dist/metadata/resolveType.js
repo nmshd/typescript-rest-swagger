@@ -1,6 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.resolveImports = exports.getLiteralValue = exports.getCommonPrimitiveAndArrayUnionType = exports.getSuperClass = exports.resolveType = void 0;
+exports.resolveType = resolveType;
+exports.getSuperClass = getSuperClass;
+exports.getCommonPrimitiveAndArrayUnionType = getCommonPrimitiveAndArrayUnionType;
+exports.getLiteralValue = getLiteralValue;
+exports.resolveImports = resolveImports;
 const _ = require("lodash");
 const path_1 = require("path");
 const ts = require("typescript");
@@ -79,12 +83,11 @@ function resolveType(typeNode, genericTypeMap) {
         originalDeclarationFileName =
             getOriginalSourceFile(symbol) ?? sourceFile.fileName;
     }
-    if (refType && refType?.originalFileName !== originalDeclarationFileName) {
-        throw new Error(`reference type ${fullRefTypeName} with same name but different properties. Please use different names for different types.`);
-    }
-    else if (refType) {
-        return refType;
-    }
+    // if (refType && refType?.originalFileName !== originalDeclarationFileName) {
+    //   throw new Error(`reference type ${fullRefTypeName} with same name but different properties. Please use different names for different types.`)
+    // } else if (refType) {
+    //   return refType;
+    // }
     const newTmpSourceFile = `
   
   ${sourceFile.getFullText()}
@@ -194,7 +197,6 @@ function resolveType(typeNode, genericTypeMap) {
     metadataGenerator_1.MetadataGenerator.current.addReferenceType(referenceType);
     return referenceType;
 }
-exports.resolveType = resolveType;
 function resolveSpecialTypesByName(typeName, typeNode, genericTypeMap) {
     const typeReference = typeNode;
     if (typeName === "Date") {
@@ -545,7 +547,6 @@ function getSuperClass(node, typeArguments) {
     }
     return undefined;
 }
-exports.getSuperClass = getSuperClass;
 function buildGenericTypeMap(node, typeArguments) {
     const result = new Map();
     if (node.typeParameters && typeArguments) {
@@ -589,7 +590,6 @@ function getCommonPrimitiveAndArrayUnionType(typeNode) {
     }
     return null;
 }
-exports.getCommonPrimitiveAndArrayUnionType = getCommonPrimitiveAndArrayUnionType;
 function getLiteralValue(expression) {
     if (expression.kind === ts.SyntaxKind.StringLiteral) {
         return expression.text;
@@ -608,7 +608,6 @@ function getLiteralValue(expression) {
     }
     return;
 }
-exports.getLiteralValue = getLiteralValue;
 function resolveImports(node) {
     const nodeAsImportSpecifier = node;
     const checker = metadataGenerator_1.MetadataGenerator.current.typeChecker;
@@ -622,7 +621,6 @@ function resolveImports(node) {
     }
     return node;
 }
-exports.resolveImports = resolveImports;
 function getSourceFile(node) {
     while (node.kind !== ts.SyntaxKind.SourceFile) {
         node = node.parent;
