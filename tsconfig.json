@@ -1,27 +1,22 @@
 {
-    "compilerOptions": {
-        "declaration": true,
-        "declarationMap": true,
-        "experimentalDecorators": true,
-        "emitDecoratorMetadata": true,
-        "lib": [
-            "es6",
-            "dom"
-        ],
-        "module": "commonjs",
-        "newLine": "LF",
-        "noFallthroughCasesInSwitch": true,
-        "noImplicitAny": false,
-        "noImplicitReturns": true,
-        "noImplicitThis": false,
-        "noUnusedParameters": false,
-        "noUnusedLocals": false,
-        "outDir": "dist",
-        "sourceMap": true,
-        "strictNullChecks": true,
-        "target": "ESNext"
-    },
-    "include": [
-        "src/**/*.ts"
-    ]
+  "compilerOptions": {
+    "declaration": true,
+    "declarationMap": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "lib": ["es6", "dom"],
+    "module": "commonjs",
+    "newLine": "LF",
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitAny": false,
+    "noImplicitReturns": true,
+    "noImplicitThis": false,
+    "noUnusedParameters": false,
+    "noUnusedLocals": false,
+    "outDir": "dist",
+    "sourceMap": true,
+    "strictNullChecks": true,
+    "target": "ESNext"
+  },
+  "include": ["src/**/*.ts"]
 }
