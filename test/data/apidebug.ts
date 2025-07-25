@@ -1,19 +1,16 @@
-import { POST, Path } from "typescript-rest";
-import { TestInterface as Test } from "./TestInterface";
+import { GET, POST, Path, Security } from "typescript-rest";
 
-interface A<T> extends Test {
-  c: T;
-}
+@Path("secure")
+@Security(["ROLE_1", "ROLE_2"], "access_token")
+export class SecureEndpoint {
+  @GET
+  public get(): string {
+    return "Access Granted";
+  }
 
-@Path("type")
-export class TypeEndpoint<T extends Test> {
-  @Path("obj")
   @POST
-  public testPostObject(body: T) : A<string> {
-    return {
-      c: "test",
-      a: body.a,
-      b: body.b,
-    } as A<string>;
+  @Security([], "user_email")
+  public post(): string {
+    return "Posted";
   }
 }

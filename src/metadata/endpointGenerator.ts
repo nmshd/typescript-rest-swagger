@@ -2,16 +2,20 @@
 
 import * as debug from "debug";
 import * as _ from "lodash";
+import { ClassDeclaration, MethodDeclaration, Project } from "ts-morph";
 import * as ts from "typescript";
 import { getDecorators } from "../utils/decoratorUtils";
-import { ResponseType } from "./metadataGenerator";
+import { getNodeAsTsMorphNode } from "../utils/utils";
+import { ResponseType, Type } from "./metadataGenerator";
 import { resolveType } from "./resolveType";
 
 export abstract class EndpointGenerator<T extends ts.Node> {
   protected node: T;
   protected debugger: debug.Debugger;
+  protected morph: Project;
 
-  constructor(node: T, name: string) {
+  constructor(node: T, morph: Project, name: string) {
+    this.morph = morph;
     this.node = node;
     this.debugger = debug(`typescript-rest-swagger:metadata:${name}`);
   }
@@ -119,9 +123,20 @@ export abstract class EndpointGenerator<T extends ts.Node> {
     }
   }
 
-  protected getResponses(
-    genericTypeMap?: Map<String, ts.TypeNode>
-  ): Array<ResponseType> {
+  protected getResponses(): Array<ResponseType> {
+    const tsMorphNode = getNodeAsTsMorphNode(this.node, this.morph);
+
+    if (
+      !(tsMorphNode instanceof ClassDeclaration) &&
+      !(tsMorphNode instanceof MethodDeclaration)
+    ) {
+      throw new Error(
+        `Node at position ${
+          this.node.pos
+        } is not a valid TypeScript node. Expected a MethodDeclaration or ClassDeclaration, but got ${tsMorphNode.getKindName()}.`
+      );
+    }
+
     const decorators = getDecorators(
       this.node,
       (decorator) => decorator.text === "Response"
@@ -131,37 +146,46 @@ export abstract class EndpointGenerator<T extends ts.Node> {
     }
     this.debugger("Generating Responses for %s", this.getCurrentLocation());
 
-    return decorators.map((decorator) => {
-      let description = "";
-      let status = "200";
-      let examples;
-      if (decorator.arguments.length > 0 && decorator.arguments[0]) {
-        status = decorator.arguments[0];
-      }
-      if (decorator.arguments.length > 1 && decorator.arguments[1]) {
-        description = decorator.arguments[1] as any;
-      }
-      if (decorator.arguments.length > 2 && decorator.arguments[2]) {
-        const argument = decorator.arguments[2] as any;
-        examples = this.getExamplesValue(argument);
-      }
-      const responses = {
-        description: description,
-        examples: examples,
-        schema:
-          decorator.typeArguments && decorator.typeArguments.length > 0
-            ? resolveType(decorator.typeArguments[0], genericTypeMap)
-            : undefined,
-        status: status,
-      };
-      this.debugger(
-        "Generated Responses for %s: %j",
-        this.getCurrentLocation(),
-        responses
-      );
+    return tsMorphNode
+      .getDecorators()
+      .filter((decorator) => {
+        return decorator.getName() === "Response";
+      })
+      .map((decorator) => {
+        let description = "";
+        let status = "200";
+        let examples;
+        const args = decorator.getArguments();
+        if (args[0]) {
+          status = args[0].getText();
+        }
+        if (args[1]) {
+          description = JSON.parse(args[1].getText());
+        }
+        if (args[2]) {
+          const argument = args[2];
+          examples = this.getExamplesValue(argument.compilerNode);
+        }
+        let schema: Type | undefined = undefined;
+        const typeArguments = decorator.getTypeArguments();
+        if (typeArguments[0]) {
+          schema = resolveType(typeArguments[0].getType());
+        }
 
-      return responses;
-    });
+        const responses = {
+          description: description,
+          examples: examples,
+          schema: schema,
+          status: status,
+        };
+        this.debugger(
+          "Generated Responses for %s: %j",
+          this.getCurrentLocation(),
+          responses
+        );
+
+        return responses;
+      });
   }
 
   protected abstract getCurrentLocation(): string;

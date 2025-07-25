@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.SpecGenerator = void 0;
 const debug = require("debug");
 const fs = require("fs");
-const fs_extra_promise_1 = require("fs-extra-promise");
+const promises_1 = require("fs/promises");
 const _ = require("lodash");
 const pathUtil = require("path");
 const YAML = require("yamljs");
@@ -28,7 +28,7 @@ class SpecGenerator {
             const swaggerDirs = _.castArray(this.config.outputDirectory);
             this.debugger("Saving specs to folders: %j", swaggerDirs);
             swaggerDirs.forEach((swaggerDir) => {
-                (0, fs_extra_promise_1.mkdirp)(swaggerDir)
+                (0, promises_1.mkdir)(swaggerDir, { recursive: true })
                     .then(() => {
                     this.debugger("Saving specs json file to folder: %j", swaggerDir);
                     fs.writeFile(`${swaggerDir}/swagger.json`, JSON.stringify(spec, null, "\t"), (err) => {
@@ -187,16 +187,6 @@ class SpecGenerator {
                 required: false,
                 type: p.type,
             }));
-            // pathMethod.parameters.push(
-            //   this.buildParameter({
-            //     description: p.description,
-            //     in: "formData",
-            //     name: p.name,
-            //     parameterName: p.parameterName,
-            //     required: false,
-            //     type: p.type,
-            //   })
-            // );
         });
         if (bodyParam.length > 1) {
             throw new Error("Only one body parameter allowed per controller method.");
@@ -222,6 +212,14 @@ class SpecGenerator {
         };
         const parameterType = this.getSwaggerType(parameter.type);
         swaggerParameter.schema = parameterType;
+        if (swaggerParameter.schema &&
+            "$ref" in swaggerParameter.schema &&
+            parameter.default) {
+            throw new Error("Default value is not allowed for reference types.");
+        }
+        if (swaggerParameter.schema && !("$ref" in swaggerParameter.schema)) {
+            swaggerParameter.schema.default = parameter.default;
+        }
         return swaggerParameter;
     }
     buildProperties(properties) {
@@ -258,9 +256,9 @@ class SpecGenerator {
                             schema: swaggerType,
                         };
                     }
-                    // if (res.examples && mimeType) {
-                    //   codeObject.content[mimeType].examples = res.examples;
-                    // }
+                    if (res.examples && mimeType && codeObject.content) {
+                        codeObject.content[mimeType].example = res.examples;
+                    }
                 }
             }
         });
@@ -359,7 +357,10 @@ class SpecGenerator {
         if (!arrayType.elementType) {
             return undefined;
         }
-        return { type: "array", items: this.getSwaggerType(arrayType.elementType) };
+        return {
+            type: "array",
+            items: this.getSwaggerType(arrayType.elementType),
+        };
     }
     getSwaggerTypeForEnumType(enumType) {
         function getDerivedTypeFromValues(values) {

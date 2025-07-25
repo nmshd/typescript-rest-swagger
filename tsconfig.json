@@ -5,7 +5,7 @@
         "experimentalDecorators": true,
         "emitDecoratorMetadata": true,
         "lib": [
-            "es6",
+            "ES2022",
             "dom"
         ],
         "module": "commonjs",

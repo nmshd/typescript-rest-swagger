@@ -3,7 +3,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getJSDocDescription = getJSDocDescription;
 exports.getJSDocTag = getJSDocTag;
 exports.isExistJSDocTag = isExistJSDocTag;
-exports.getFirstMatchingJSDocTagName = getFirstMatchingJSDocTagName;
+exports.getJSDocDescriptionFromProperty = getJSDocDescriptionFromProperty;
+const ts_morph_1 = require("ts-morph");
 function getJSDocDescription(node) {
     const jsDocs = node.jsDoc;
     if (!jsDocs || !jsDocs.length) {
@@ -28,13 +29,6 @@ function isExistJSDocTag(node, tagName) {
 function getJSDocTags(node, tagName) {
     return getMatchingJSDocTags(node, (t) => t.tagName.text === tagName);
 }
-function getFirstMatchingJSDocTagName(node, isMatching) {
-    const tags = getMatchingJSDocTags(node, isMatching);
-    if (!tags || !tags.length) {
-        return undefined;
-    }
-    return tags[0].tagName.text;
-}
 function getMatchingJSDocTags(node, isMatching) {
     const jsDocs = node.jsDoc;
     if (!jsDocs || !jsDocs.length) {
@@ -45,5 +39,44 @@ function getMatchingJSDocTags(node, isMatching) {
         return undefined;
     }
     return jsDoc.tags.filter(isMatching);
+}
+function getJSDocDescriptionFromProperty(propNode, parentNode) {
+    let description = "";
+    const name = propNode.getSymbol()?.getName();
+    if (ts_morph_1.Node.isJSDocable(propNode)) {
+        const jsDocs = propNode.getJsDocs().map((jsDoc) => jsDoc.getCommentText());
+        description += "\n" + jsDocs.join("\n").trim();
+    }
+    if (!parentNode) {
+        return description.trim();
+    }
+    if (!name) {
+        return description.trim();
+    }
+    const expressionsWithTypeArguments = [];
+    if (ts_morph_1.Node.isClassLikeDeclarationBase(parentNode)) {
+        const extendsClause = parentNode.getExtends();
+        if (extendsClause) {
+            expressionsWithTypeArguments.push(extendsClause);
+        }
+        const implementsClause = parentNode.getImplements();
+        expressionsWithTypeArguments.push(...implementsClause);
+    }
+    if (ts_morph_1.Node.isInterfaceDeclaration(parentNode)) {
+        const extendsClause = parentNode.getExtends();
+        expressionsWithTypeArguments.push(...extendsClause);
+    }
+    if (expressionsWithTypeArguments.length > 0) {
+        for (const expression of expressionsWithTypeArguments) {
+            const propOfExtendsOrImplements = expression.getType().getProperty(name);
+            if (propOfExtendsOrImplements) {
+                const node = propOfExtendsOrImplements.getDeclarations().at(0);
+                if (node) {
+                    description += "\n" + getJSDocDescriptionFromProperty(node);
+                }
+            }
+        }
+    }
+    return description.trim();
 }
 //# sourceMappingURL=jsDocUtils.js.map

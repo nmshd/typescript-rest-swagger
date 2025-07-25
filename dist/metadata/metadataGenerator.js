@@ -104,7 +104,7 @@ class MetadataGenerator {
         return this.nodes
             .filter((node) => node.kind === ts.SyntaxKind.ClassDeclaration)
             .filter((node) => !(0, decoratorUtils_1.isDecorator)(node, (decorator) => "Hidden" === decorator.text))
-            .map((classDeclaration) => new controllerGenerator_1.ControllerGenerator(classDeclaration))
+            .map((classDeclaration) => new controllerGenerator_1.ControllerGenerator(classDeclaration, this.morph))
             .filter((generator) => generator.isValid())
             .map((generator) => generator.generate());
     }

@@ -24,7 +24,7 @@
  * @param example An optional example of response to be added to method documentation.
  */
 export function Response<T>(
-  name: string | number,
+  name: number,
   description?: string,
   example?: T
 ): any {
@@ -141,6 +141,22 @@ export function IsFloat(
  * This is the default for `number` types without a specifying decorator.
  */
 export function IsDouble(
+  target: any,
+  propertyKey: string,
+  parameterIndex?: number
+) {
+  return;
+}
+
+export function IsDate(
+  target: any,
+  propertyKey: string,
+  parameterIndex?: number
+) {
+  return;
+}
+
+export function IsDateTime(
   target: any,
   propertyKey: string,
   parameterIndex?: number

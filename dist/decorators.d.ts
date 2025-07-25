@@ -21,7 +21,7 @@
  * @param description A description for this response
  * @param example An optional example of response to be added to method documentation.
  */
-export declare function Response<T>(name: string | number, description?: string, example?: T): any;
+export declare function Response<T>(name: number, description?: string, example?: T): any;
 /**
  * Used to provide an example of method return to be added into the method response section of the
  * generated documentation for this method.
@@ -84,4 +84,6 @@ export declare function IsFloat(target: any, propertyKey: string, parameterIndex
  * This is the default for `number` types without a specifying decorator.
  */
 export declare function IsDouble(target: any, propertyKey: string, parameterIndex?: number): void;
+export declare function IsDate(target: any, propertyKey: string, parameterIndex?: number): void;
+export declare function IsDateTime(target: any, propertyKey: string, parameterIndex?: number): void;
 //# sourceMappingURL=decorators.d.ts.map

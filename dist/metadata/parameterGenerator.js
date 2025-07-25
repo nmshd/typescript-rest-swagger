@@ -3,18 +3,19 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ParameterGenerator = void 0;
 const ts = require("typescript");
 const decoratorUtils_1 = require("../utils/decoratorUtils");
+const utils_1 = require("../utils/utils");
 const metadataGenerator_1 = require("./metadataGenerator");
 const resolveType_1 = require("./resolveType");
 class ParameterGenerator {
     parameter;
     method;
     path;
-    genericTypeMap;
-    constructor(parameter, method, path, genericTypeMap) {
+    morph;
+    constructor(parameter, method, path, morph) {
         this.parameter = parameter;
         this.method = method;
         this.path = path;
-        this.genericTypeMap = genericTypeMap;
+        this.morph = morph;
     }
     generate() {
         const decoratorName = (0, decoratorUtils_1.getDecoratorName)(this.parameter, (identifier) => this.supportParameterDecorator(identifier.text));
@@ -23,18 +24,12 @@ class ParameterGenerator {
                 return this.getRequestParameter(this.parameter);
             case "CookieParam":
                 return this.getCookieParameter(this.parameter);
-            case "FormParam":
-                return undefined; // this.getFormParameter(this.parameter);
             case "HeaderParam":
                 return this.getHeaderParameter(this.parameter);
             case "QueryParam":
                 return this.getQueryParameter(this.parameter);
             case "PathParam":
                 return this.getPathParameter(this.parameter);
-            case "FileParam":
-                return undefined; //  this.getFileParameter(this.parameter);
-            case "FilesParam":
-                return undefined; //  this.getFilesParameter(this.parameter);
             case "Context":
             case "ContextRequest":
             case "ContextResponse":
@@ -129,7 +124,7 @@ class ParameterGenerator {
         const parameterOptions = (0, decoratorUtils_1.getDecoratorOptions)(this.parameter, (ident) => ident.text === "QueryParam") || {};
         let type = this.getValidatedType(parameter);
         if (!this.supportQueryDataType(type)) {
-            const arrayType = (0, resolveType_1.getCommonPrimitiveAndArrayUnionType)(parameter.type);
+            const arrayType = (0, resolveType_1.getCommonPrimitiveAndArrayUnionType)((0, utils_1.getNodeAsTsMorphNode)(parameter, this.morph).getType());
             if (arrayType && this.supportQueryDataType(arrayType)) {
                 type = arrayType;
             }
@@ -241,7 +236,8 @@ class ParameterGenerator {
         if (!parameter.type) {
             throw new Error(`Parameter ${parameter.name} doesn't have a valid type assigned in '${this.getCurrentLocation()}'.`);
         }
-        return (0, resolveType_1.resolveType)(parameter.type, this.genericTypeMap);
+        const nodeAsTsMorphNode = (0, utils_1.getNodeAsTsMorphNode)(parameter, this.morph);
+        return (0, resolveType_1.resolveType)(nodeAsTsMorphNode.getType(), undefined, nodeAsTsMorphNode);
     }
     getDefaultValue(initializer) {
         if (!initializer) {

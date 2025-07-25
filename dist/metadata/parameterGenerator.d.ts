@@ -1,11 +1,12 @@
+import { Project } from "ts-morph";
 import * as ts from "typescript";
 import { Parameter } from "./metadataGenerator";
 export declare class ParameterGenerator {
     private readonly parameter;
     private readonly method;
     private readonly path;
-    private readonly genericTypeMap?;
-    constructor(parameter: ts.ParameterDeclaration, method: string, path: string, genericTypeMap?: Map<String, ts.TypeNode> | undefined);
+    private readonly morph;
+    constructor(parameter: ts.ParameterDeclaration, method: string, path: string, morph: Project);
     generate(): Parameter | undefined;
     private getCurrentLocation;
     private getRequestParameter;

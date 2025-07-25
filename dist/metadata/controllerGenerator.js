@@ -1,19 +1,17 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ControllerGenerator = void 0;
-const _ = require("lodash");
 const ts = require("typescript");
 const decoratorUtils_1 = require("../utils/decoratorUtils");
-const pathUtils_1 = require("../utils/pathUtils");
+const utils_1 = require("../utils/utils");
 const endpointGenerator_1 = require("./endpointGenerator");
 const methodGenerator_1 = require("./methodGenerator");
-const resolveType_1 = require("./resolveType");
 class ControllerGenerator extends endpointGenerator_1.EndpointGenerator {
     pathValue;
     genMethods = new Set();
-    constructor(node) {
-        super(node, "controllers");
-        this.pathValue = (0, pathUtils_1.normalizePath)((0, decoratorUtils_1.getDecoratorTextValue)(node, (decorator) => decorator.text === "Path"));
+    constructor(node, morph) {
+        super(node, morph, "controllers");
+        this.pathValue = (0, utils_1.normalizePath)((0, decoratorUtils_1.getDecoratorTextValue)(node, (decorator) => decorator.text === "Path"));
     }
     isValid() {
         return !!this.pathValue || this.pathValue === "";
@@ -48,22 +46,13 @@ class ControllerGenerator extends endpointGenerator_1.EndpointGenerator {
         return this.node.name?.text ?? "";
     }
     buildMethods() {
-        let result = [];
-        let targetClass = {
-            type: this.node,
-            typeArguments: null,
-        };
-        while (targetClass) {
-            result = _.union(result, this.buildMethodsForClass(targetClass.type, targetClass.typeArguments));
-            targetClass = (0, resolveType_1.getSuperClass)(targetClass.type, targetClass.typeArguments);
-        }
-        return result;
+        return this.buildMethodsForClass(this.node);
     }
-    buildMethodsForClass(node, genericTypeMap) {
+    buildMethodsForClass(node) {
         return node.members
             .filter((m) => m.kind === ts.SyntaxKind.MethodDeclaration)
             .filter((m) => !(0, decoratorUtils_1.isDecorator)(m, (decorator) => "Hidden" === decorator.text))
-            .map((m) => new methodGenerator_1.MethodGenerator(m, this.pathValue || "", genericTypeMap))
+            .map((m) => new methodGenerator_1.MethodGenerator(m, this.morph, this.pathValue || "", this.node))
             .filter((generator) => {
             if (generator.isValid() &&
                 !this.genMethods.has(generator.getMethodName())) {

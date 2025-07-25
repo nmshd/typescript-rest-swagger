@@ -1,4 +1,5 @@
 import * as pathUtil from "path";
+import { MethodDeclaration, Project } from "ts-morph";
 import * as ts from "typescript";
 import { getDecorators } from "../utils/decoratorUtils";
 import {
@@ -6,14 +7,14 @@ import {
   getJSDocTag,
   isExistJSDocTag,
 } from "../utils/jsDocUtils";
-import { normalizePath } from "../utils/pathUtils";
+import { getNodeAsTsMorphNode, normalizePath } from "../utils/utils";
 import { EndpointGenerator } from "./endpointGenerator";
 import {
   Method,
   Parameter,
   ResponseData,
   ResponseType,
-  Type
+  Type,
 } from "./metadataGenerator";
 import { ParameterGenerator } from "./parameterGenerator";
 import { resolveType } from "./resolveType";
@@ -24,10 +25,11 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
 
   constructor(
     node: ts.MethodDeclaration,
+    morph: Project,
     private readonly controllerPath: string,
-    private readonly genericTypeMap?: Map<String, ts.TypeNode>
+    public classNode: ts.ClassDeclaration
   ) {
-    super(node, "methods");
+    super(node, morph, "methods");
     this.processMethodDecorators();
   }
 
@@ -49,16 +51,29 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
       "Generating Metadata for method %s",
       this.getCurrentLocation()
     );
-    // TODO implement implicit return type 
+    // TODO implement implicit return type
     // const typeChecker = MetadataGenerator.current.typeChecker;
     // const signature =
     //   typeChecker.getSignatureFromDeclaration(this.node);
     // const returnType = typeChecker.getReturnTypeOfSignature(signature);
     // const kind = ts.SyntaxKind[this.node.kind];
     const identifier = this.node.name as ts.Identifier;
-    const type = resolveType(this.node.type, this.genericTypeMap);
+
+    const tsMorphNode = getNodeAsTsMorphNode(this.node, this.morph);
+
+    if (!(tsMorphNode instanceof MethodDeclaration)) {
+      throw new Error(
+        `Node ${this.getCurrentLocation()} is not a valid MethodDeclaration.`
+      );
+    }
+
+    const type = resolveType(
+      tsMorphNode.getReturnType(),
+      undefined,
+      tsMorphNode
+    );
     const responses = this.mergeResponses(
-      this.getResponses(this.genericTypeMap),
+      this.getResponses(),
       this.getMethodSuccessResponse(type)
     );
 
@@ -112,7 +127,7 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
             p,
             this.method,
             path,
-            this.genericTypeMap
+            this.morph
           ).generate();
         } catch (e) {
           const methodId = this.node.name as ts.Identifier;
@@ -124,7 +139,9 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
           );
         }
       })
-      .filter((p) => p && p.in !== "context" && p.in !== "cookie") as Parameter[];
+      .filter(
+        (p) => p && p.in !== "context" && p.in !== "cookie"
+      ) as Parameter[];
 
     const bodyParameters = parameters.filter((p) => p && p.in === "body");
     const formParameters = parameters.filter((p) => p && p.in === "formData");

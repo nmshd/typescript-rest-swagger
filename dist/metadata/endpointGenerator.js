@@ -3,13 +3,17 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.EndpointGenerator = void 0;
 const debug = require("debug");
 const _ = require("lodash");
+const ts_morph_1 = require("ts-morph");
 const ts = require("typescript");
 const decoratorUtils_1 = require("../utils/decoratorUtils");
+const utils_1 = require("../utils/utils");
 const resolveType_1 = require("./resolveType");
 class EndpointGenerator {
     node;
     debugger;
-    constructor(node, name) {
+    morph;
+    constructor(node, morph, name) {
+        this.morph = morph;
         this.node = node;
         this.debugger = debug(`typescript-rest-swagger:metadata:${name}`);
     }
@@ -93,32 +97,46 @@ class EndpointGenerator {
                 return undefined;
         }
     }
-    getResponses(genericTypeMap) {
+    getResponses() {
+        const tsMorphNode = (0, utils_1.getNodeAsTsMorphNode)(this.node, this.morph);
+        if (!(tsMorphNode instanceof ts_morph_1.ClassDeclaration) &&
+            !(tsMorphNode instanceof ts_morph_1.MethodDeclaration)) {
+            throw new Error(`Node at position ${this.node.pos} is not a valid TypeScript node. Expected a MethodDeclaration or ClassDeclaration, but got ${tsMorphNode.getKindName()}.`);
+        }
         const decorators = (0, decoratorUtils_1.getDecorators)(this.node, (decorator) => decorator.text === "Response");
         if (!decorators || !decorators.length) {
             return [];
         }
         this.debugger("Generating Responses for %s", this.getCurrentLocation());
-        return decorators.map((decorator) => {
+        return tsMorphNode
+            .getDecorators()
+            .filter((decorator) => {
+            return decorator.getName() === "Response";
+        })
+            .map((decorator) => {
             let description = "";
             let status = "200";
             let examples;
-            if (decorator.arguments.length > 0 && decorator.arguments[0]) {
-                status = decorator.arguments[0];
+            const args = decorator.getArguments();
+            if (args[0]) {
+                status = args[0].getText();
             }
-            if (decorator.arguments.length > 1 && decorator.arguments[1]) {
-                description = decorator.arguments[1];
+            if (args[1]) {
+                description = JSON.parse(args[1].getText());
             }
-            if (decorator.arguments.length > 2 && decorator.arguments[2]) {
-                const argument = decorator.arguments[2];
-                examples = this.getExamplesValue(argument);
+            if (args[2]) {
+                const argument = args[2];
+                examples = this.getExamplesValue(argument.compilerNode);
+            }
+            let schema = undefined;
+            const typeArguments = decorator.getTypeArguments();
+            if (typeArguments[0]) {
+                schema = (0, resolveType_1.resolveType)(typeArguments[0].getType());
             }
             const responses = {
                 description: description,
                 examples: examples,
-                schema: decorator.typeArguments && decorator.typeArguments.length > 0
-                    ? (0, resolveType_1.resolveType)(decorator.typeArguments[0], genericTypeMap)
-                    : undefined,
+                schema: schema,
                 status: status,
             };
             this.debugger("Generated Responses for %s: %j", this.getCurrentLocation(), responses);

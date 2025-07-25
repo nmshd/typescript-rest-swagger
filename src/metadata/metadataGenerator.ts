@@ -129,7 +129,7 @@ export class MetadataGenerator {
       )
       .map(
         (classDeclaration: ts.ClassDeclaration) =>
-          new ControllerGenerator(classDeclaration)
+          new ControllerGenerator(classDeclaration, this.morph)
       )
       .filter((generator) => generator.isValid())
       .map((generator) => generator.generate());
@@ -188,21 +188,40 @@ export interface Security {
   scopes?: Array<string>;
 }
 
+
 export interface Type {
-  typeName: string;
+  typeName:
+    | "array"
+    | "object"
+    | "void"
+    | "string"
+    | "double"
+    | "boolean"
+    | "buffer"
+    | "integer"
+    | "long"
+    | "float"
+    | "date"
+    | "datetime"
+    | "enum"
+    | "undefined"
+    | string;
   simpleTypeName?: string;
   typeArgument?: Type;
 }
 
 export interface EnumerateType extends Type {
+  typeName: "enum";
   enumMembers: Array<string>;
 }
 
 export interface UnionType extends Type {
+  typeName: string;
   types: Array<Type>;
 }
 
 export interface ReferenceType extends Type {
+  typeName: string;
   description: string;
   properties: Array<Property>;
   originalFileName: any;

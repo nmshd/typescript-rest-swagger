@@ -2,21 +2,22 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MethodGenerator = void 0;
 const pathUtil = require("path");
+const ts_morph_1 = require("ts-morph");
 const decoratorUtils_1 = require("../utils/decoratorUtils");
 const jsDocUtils_1 = require("../utils/jsDocUtils");
-const pathUtils_1 = require("../utils/pathUtils");
+const utils_1 = require("../utils/utils");
 const endpointGenerator_1 = require("./endpointGenerator");
 const parameterGenerator_1 = require("./parameterGenerator");
 const resolveType_1 = require("./resolveType");
 class MethodGenerator extends endpointGenerator_1.EndpointGenerator {
     controllerPath;
-    genericTypeMap;
+    classNode;
     method;
     path;
-    constructor(node, controllerPath, genericTypeMap) {
-        super(node, "methods");
+    constructor(node, morph, controllerPath, classNode) {
+        super(node, morph, "methods");
         this.controllerPath = controllerPath;
-        this.genericTypeMap = genericTypeMap;
+        this.classNode = classNode;
         this.processMethodDecorators();
     }
     isValid() {
@@ -31,15 +32,19 @@ class MethodGenerator extends endpointGenerator_1.EndpointGenerator {
             throw new Error("This isn't a valid controller method.");
         }
         this.debugger("Generating Metadata for method %s", this.getCurrentLocation());
-        // TODO implement implicit return type 
+        // TODO implement implicit return type
         // const typeChecker = MetadataGenerator.current.typeChecker;
         // const signature =
         //   typeChecker.getSignatureFromDeclaration(this.node);
         // const returnType = typeChecker.getReturnTypeOfSignature(signature);
         // const kind = ts.SyntaxKind[this.node.kind];
         const identifier = this.node.name;
-        const type = (0, resolveType_1.resolveType)(this.node.type, this.genericTypeMap);
-        const responses = this.mergeResponses(this.getResponses(this.genericTypeMap), this.getMethodSuccessResponse(type));
+        const tsMorphNode = (0, utils_1.getNodeAsTsMorphNode)(this.node, this.morph);
+        if (!(tsMorphNode instanceof ts_morph_1.MethodDeclaration)) {
+            throw new Error(`Node ${this.getCurrentLocation()} is not a valid MethodDeclaration.`);
+        }
+        const type = (0, resolveType_1.resolveType)(tsMorphNode.getReturnType(), undefined, tsMorphNode);
+        const responses = this.mergeResponses(this.getResponses(), this.getMethodSuccessResponse(type));
         const methodMetadata = {
             consumes: this.getDecoratorValues("Consumes"),
             deprecated: (0, jsDocUtils_1.isExistJSDocTag)(this.node, "deprecated"),
@@ -72,7 +77,7 @@ class MethodGenerator extends endpointGenerator_1.EndpointGenerator {
             .map((p) => {
             try {
                 const path = pathUtil.posix.join("/", this.controllerPath ? this.controllerPath : "", this.path);
-                return new parameterGenerator_1.ParameterGenerator(p, this.method, path, this.genericTypeMap).generate();
+                return new parameterGenerator_1.ParameterGenerator(p, this.method, path, this.morph).generate();
             }
             catch (e) {
                 const methodId = this.node.name;
@@ -116,7 +121,7 @@ class MethodGenerator extends endpointGenerator_1.EndpointGenerator {
         if (pathDecorators) {
             const pathDecorator = pathDecorators[0];
             this.path = pathDecorator
-                ? `/${(0, pathUtils_1.normalizePath)(pathDecorator.arguments[0])}`
+                ? `/${(0, utils_1.normalizePath)(pathDecorator.arguments[0])}`
                 : "";
         }
         else {

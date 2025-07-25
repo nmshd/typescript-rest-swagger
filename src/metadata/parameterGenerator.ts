@@ -1,9 +1,11 @@
+import { Project } from "ts-morph";
 import * as ts from "typescript";
 import {
   getDecoratorName,
   getDecoratorOptions,
   getDecoratorTextValue,
 } from "../utils/decoratorUtils";
+import { getNodeAsTsMorphNode } from "../utils/utils";
 import { MetadataGenerator, Parameter, Type } from "./metadataGenerator";
 import {
   getCommonPrimitiveAndArrayUnionType,
@@ -16,7 +18,7 @@ export class ParameterGenerator {
     private readonly parameter: ts.ParameterDeclaration,
     private readonly method: string,
     private readonly path: string,
-    private readonly genericTypeMap?: Map<String, ts.TypeNode>
+    private readonly morph: Project
   ) {}
 
   public generate(): Parameter | undefined {
@@ -29,18 +31,12 @@ export class ParameterGenerator {
         return this.getRequestParameter(this.parameter);
       case "CookieParam":
         return this.getCookieParameter(this.parameter);
-      case "FormParam":
-        return undefined // this.getFormParameter(this.parameter);
       case "HeaderParam":
         return this.getHeaderParameter(this.parameter);
       case "QueryParam":
         return this.getQueryParameter(this.parameter);
       case "PathParam":
         return this.getPathParameter(this.parameter);
-      case "FileParam":
-        return undefined //  this.getFileParameter(this.parameter);
-      case "FilesParam":
-        return undefined //  this.getFilesParameter(this.parameter);
       case "Context":
       case "ContextRequest":
       case "ContextResponse":
@@ -173,7 +169,9 @@ export class ParameterGenerator {
     let type = this.getValidatedType(parameter);
 
     if (!this.supportQueryDataType(type)) {
-      const arrayType = getCommonPrimitiveAndArrayUnionType(parameter.type);
+      const arrayType = getCommonPrimitiveAndArrayUnionType(
+        getNodeAsTsMorphNode(parameter, this.morph).getType()
+      );
       if (arrayType && this.supportQueryDataType(arrayType)) {
         type = arrayType;
       } else {
@@ -205,7 +203,7 @@ export class ParameterGenerator {
     let isUndefinedUnion =
       parameter.type?.kind === ts.SyntaxKind.UnionType &&
       (parameter.type as ts.UnionTypeNode).types.some(
-        (t:any) => t.kind === ts.SyntaxKind.UndefinedKeyword
+        (t: any) => t.kind === ts.SyntaxKind.UndefinedKeyword
       );
     return (
       !parameter.questionToken && !parameter.initializer && !isUndefinedUnion
@@ -325,9 +323,13 @@ export class ParameterGenerator {
         } doesn't have a valid type assigned in '${this.getCurrentLocation()}'.`
       );
     }
-    return resolveType(parameter.type, this.genericTypeMap);
+    const nodeAsTsMorphNode = getNodeAsTsMorphNode(parameter, this.morph);
+    return resolveType(
+      nodeAsTsMorphNode.getType(),
+      undefined,
+      nodeAsTsMorphNode
+    );
   }
-
 
   private getDefaultValue(initializer?: ts.Expression) {
     if (!initializer) {

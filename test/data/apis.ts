@@ -3,7 +3,6 @@
 import {
   Accept,
   DELETE,
-  FormParam,
   GET,
   POST,
   PUT,
@@ -42,7 +41,7 @@ interface End {
   id: string;
 }
 
-type EndArrayRenamed = Array<End>
+type EndArrayRenamed = Array<End>;
 
 interface Error {
   text: string;
@@ -68,16 +67,10 @@ enum TestNumericEnum {
   Option2,
 }
 
-enum TestMixedEnum {
-  Option1,
-  Option2 = "String param",
-}
-
 @Accept("text/plain")
 @Path("mypath")
 @swagger.Tags("My Services")
 export class MyService {
-  @swagger.Response<string>("default", "Error")
   @swagger.Response<string>(400, "The request format was incorrect.")
   @swagger.Response<string>(500, "There was an unexpected error.")
   @GET
@@ -101,8 +94,7 @@ export class MyService {
     @QueryParam("testDefault") test2: string = "value",
     @QueryParam("testOptional") test3?: string,
     @QueryParam("testEnum") test4?: TestEnum,
-    @QueryParam("testNumericEnum") test5?: TestNumericEnum,
-    @QueryParam("testMixedEnum") test6?: TestMixedEnum
+    @QueryParam("testNumericEnum") test5?: TestNumericEnum
   ): Person {
     return { name: "OK" };
   }
@@ -193,12 +185,6 @@ export class MyService {
     payload: TestInterface
   ): Promise<TestInterface> {
     return { a: "string", b: 123 };
-  }
-
-  @POST
-  @Path("test-form-param")
-  public testFormParam(@FormParam("id") id: string): string {
-    return id;
   }
 }
 
@@ -479,6 +465,12 @@ export class PrimitiveEndpoint {
   public getArray(): ResponseBody<Array<string>> {
     return { data: ["hello", "world"] };
   }
+
+  @Path("/date")
+  @POST
+  public getDate(@swagger.IsDate date: Date): ResponseBody<Date> {
+    return { data: new Date() };
+  }
 }
 
 @Path("parameterized/:objectId")
@@ -496,8 +488,23 @@ export abstract class Entity {
    */
   public id?: number;
 }
+export abstract class Entity2 {
+  /**
+   * A numeric identifier2
+   */
+  public id?: number;
+}
 
 export class NamedEntity implements Entity {
+  public id: number;
+  public name: string;
+}
+
+export class NamedExtendEntity extends Entity {
+  public id: number;
+  public name: string;
+}
+export class NamedBothEntity extends Entity implements Entity2 {
   public id: number;
   public name: string;
 }
@@ -507,6 +514,14 @@ export class AbstractEntityEndpoint {
   @GET
   public get(): NamedEntity {
     return new NamedEntity();
+  }
+  @POST
+  public post(): NamedExtendEntity {
+    return new NamedExtendEntity();
+  }
+  @PUT
+  public put(): NamedBothEntity {
+    return new NamedBothEntity();
   }
 }
 

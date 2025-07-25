@@ -10,6 +10,8 @@ exports.IsInt = IsInt;
 exports.IsLong = IsLong;
 exports.IsFloat = IsFloat;
 exports.IsDouble = IsDouble;
+exports.IsDate = IsDate;
+exports.IsDateTime = IsDateTime;
 /**
  * A decorator to document the responses that a given service method can return. It is used to generate
  * documentation for the REST service.
@@ -126,6 +128,12 @@ function IsFloat(target, propertyKey, parameterIndex) {
  * This is the default for `number` types without a specifying decorator.
  */
 function IsDouble(target, propertyKey, parameterIndex) {
+    return;
+}
+function IsDate(target, propertyKey, parameterIndex) {
+    return;
+}
+function IsDateTime(target, propertyKey, parameterIndex) {
     return;
 }
 //# sourceMappingURL=decorators.js.map

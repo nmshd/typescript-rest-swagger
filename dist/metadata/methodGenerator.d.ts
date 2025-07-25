@@ -1,12 +1,13 @@
+import { Project } from "ts-morph";
 import * as ts from "typescript";
 import { EndpointGenerator } from "./endpointGenerator";
 import { Method } from "./metadataGenerator";
 export declare class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
     private readonly controllerPath;
-    private readonly genericTypeMap?;
+    classNode: ts.ClassDeclaration;
     private method;
     private path;
-    constructor(node: ts.MethodDeclaration, controllerPath: string, genericTypeMap?: Map<String, ts.TypeNode> | undefined);
+    constructor(node: ts.MethodDeclaration, morph: Project, controllerPath: string, classNode: ts.ClassDeclaration);
     isValid(): boolean;
     getMethodName(): string;
     generate(): Method;

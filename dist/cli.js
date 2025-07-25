@@ -49,7 +49,7 @@ new generator_1.SpecGenerator(metadata, swaggerConfig)
     console.info("Generation completed.");
 })
     .catch((err) => {
-    console.error(`Error generating swagger. ${err}`);
+    console.error(`Error generating swagger. ${err.stack}`);
 });
 function getPackageJsonValue(key) {
     try {
