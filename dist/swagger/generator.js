@@ -168,11 +168,17 @@ class SpecGenerator {
         //     [s.name]: s.scopes || [],
         //   }));
         // }
-        const [bodyParam, noBodyParameter] = method.parameters.reduce(([pass, fail], elem) => {
-            return elem.in === "body"
-                ? [[...pass, elem], fail]
-                : [pass, [...fail, elem]];
-        }, [[], []]);
+        const [bodyParam, noBodyParameter, formDataParameter] = method.parameters.reduce(([body, noBody, formData], elem) => {
+            if (elem.in === "body") {
+                return [[...body, elem], noBody, formData];
+            }
+            else if (elem.in === "formData") {
+                return [body, noBody, [...formData, elem]];
+            }
+            else {
+                return [body, [...noBody, elem], formData];
+            }
+        }, [[], [], []]);
         pathMethod.parameters = noBodyParameter
             .filter((p) => p.in !== "param")
             .map((p) => this.buildParameter(p));
@@ -193,12 +199,36 @@ class SpecGenerator {
         }
         if (bodyParam.length > 0) {
             pathMethod.requestBody = {
+                required: true,
                 content: {
                     "application/json": {
                         schema: this.getSwaggerType(bodyParam[0].type),
                     },
                 },
                 description: bodyParam[0].description,
+            };
+        }
+        if (formDataParameter.length > 0) {
+            pathMethod.requestBody = {
+                required: true,
+                content: {
+                    "multipart/form-data": {
+                        schema: {
+                            type: "object",
+                            properties: formDataParameter.reduce((acc, param) => {
+                                const paramType = this.getSwaggerType(param.type);
+                                if (paramType) {
+                                    if (!(0, swagger_1.isReferenceObject)(paramType)) {
+                                        paramType.description = param.description;
+                                    }
+                                    // acc[param.name] = {type:paramType};
+                                    acc[param.name] = paramType;
+                                }
+                                return acc;
+                            }, {}),
+                        },
+                    },
+                },
             };
         }
         return pathMethod;
@@ -241,7 +271,7 @@ class SpecGenerator {
     }
     buildOperation(controllerName, method) {
         const operation = {
-            operationId: this.getOperationId(controllerName, method.name)
+            operationId: this.getOperationId(controllerName, method.name),
         };
         method.responses.forEach((res) => {
             if (!operation.responses) {

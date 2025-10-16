@@ -154,7 +154,6 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
     const formParameters = parameters.filter((p) => p && p.in === "formData");
 
     if (bodyParameters.length > 1) {
-      debugger;
       throw new Error(
         `Only one body parameter allowed in '${this.getCurrentLocation()}' method.`
       );

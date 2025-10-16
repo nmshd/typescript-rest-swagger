@@ -304,33 +304,6 @@ function getLiteralValue(expression, morph) {
         return false;
     }
     throw new Error(`Could not resolve literal value for expression: ${expression.getText()}`);
-    // if (expression.kind === ts.SyntaxKind.StringLiteral) {
-    //   return (expression as ts.StringLiteral).text;
-    // }
-    // if (expression.kind === ts.SyntaxKind.NumericLiteral) {
-    //   return parseFloat((expression as ts.NumericLiteral).text);
-    // }
-    // if (expression.kind === ts.SyntaxKind.TrueKeyword) {
-    //   return true;
-    // }
-    // if (expression.kind === ts.SyntaxKind.FalseKeyword) {
-    //   return false;
-    // }
-    // if (expression.kind === ts.SyntaxKind.ArrayLiteralExpression) {
-    //   return (expression as ts.ArrayLiteralExpression).elements.map((e) =>
-    //     getLiteralValue(e, morph)
-    //   );
-    // }
-    // if (expression.kind === ts.SyntaxKind.PropertyAccessExpression) {
-    //   const type = MetadataGenerator.current.morph
-    //     .getTypeChecker()
-    //     .getTypeAtLocation(morphNode);
-    //   debugger;
-    //   // if (type.isLiteral()) {
-    //   // return type.getLiteralValue();
-    //   // }
-    // }
-    // return;
 }
 function getTypeObject(type) {
     const typeObject = {

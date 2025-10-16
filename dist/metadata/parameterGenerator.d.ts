@@ -25,5 +25,8 @@ export declare class ParameterGenerator {
     private supportQueryDataType;
     private getValidatedType;
     private getDefaultValue;
+    private getFormParameter;
+    private getFileParameter;
+    private getFilesParameter;
 }
 //# sourceMappingURL=parameterGenerator.d.ts.map

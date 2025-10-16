@@ -366,6 +366,75 @@ export class ParameterGenerator {
     }
     return getLiteralValue(initializer, this.morph);
   }
+
+  private getFormParameter(parameter: ts.ParameterDeclaration): Parameter {
+    const parameterName = (parameter.name as ts.Identifier).text;
+    const type = this.getValidatedType(parameter);
+
+    if (!this.supportsBodyParameters(this.method)) {
+      throw new Error(
+        `Form can't support '${this.getCurrentLocation()}' method.`
+      );
+    }
+
+    return {
+      description: this.getParameterDescription(parameter),
+      in: "formData",
+      name:
+        getDecoratorTextValue(
+          this.parameter,
+          (ident) => ident.text === "FormParam"
+        ) || parameterName,
+      parameterName: parameterName,
+      required: !parameter.questionToken && !parameter.initializer,
+      type: type,
+    };
+  }
+  private getFileParameter(parameter: ts.ParameterDeclaration): Parameter {
+    const parameterName = (parameter.name as ts.Identifier).text;
+
+    if (!this.supportsBodyParameters(this.method)) {
+      throw new Error(
+        `FileParam can't support '${this.getCurrentLocation()}' method.`
+      );
+    }
+
+    return {
+      description: this.getParameterDescription(parameter),
+      in: "formData",
+      name:
+        getDecoratorTextValue(
+          this.parameter,
+          (ident) => ident.text === "FileParam"
+        ) || parameterName,
+      parameterName: parameterName,
+      required: !parameter.questionToken,
+      type: { typeName: "file" },
+    };
+  }
+
+  private getFilesParameter(parameter: ts.ParameterDeclaration): Parameter {
+    const parameterName = (parameter.name as ts.Identifier).text;
+
+    if (!this.supportsBodyParameters(this.method)) {
+      throw new Error(
+        `FilesParam can't support '${this.getCurrentLocation()}' method.`
+      );
+    }
+
+    return {
+      description: this.getParameterDescription(parameter),
+      in: "formData",
+      name:
+        getDecoratorTextValue(
+          this.parameter,
+          (ident) => ident.text === "FilesParam"
+        ) || parameterName,
+      parameterName: parameterName,
+      required: !parameter.questionToken,
+      type: { typeName: "file" },
+    };
+  }
 }
 
 class InvalidParameterException extends Error {}

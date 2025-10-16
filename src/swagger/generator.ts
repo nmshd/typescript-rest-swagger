@@ -234,16 +234,19 @@ export class SpecGenerator {
     //   }));
     // }
 
-    const [bodyParam, noBodyParameter] = method.parameters.reduce<
-      [Parameter[], Parameter[]]
-    >(
-      ([pass, fail], elem) => {
-        return elem.in === "body"
-          ? [[...pass, elem], fail]
-          : [pass, [...fail, elem]];
-      },
-      [[], []]
-    );
+    const [bodyParam, noBodyParameter, formDataParameter] =
+      method.parameters.reduce<[Parameter[], Parameter[], Parameter[]]>(
+        ([body, noBody, formData], elem) => {
+          if (elem.in === "body") {
+            return [[...body, elem], noBody, formData];
+          } else if (elem.in === "formData") {
+            return [body, noBody, [...formData, elem]];
+          } else {
+            return [body, [...noBody, elem], formData];
+          }
+        },
+        [[], [], []]
+      );
 
     pathMethod.parameters = noBodyParameter
       .filter((p) => p.in !== "param")
@@ -268,12 +271,37 @@ export class SpecGenerator {
     }
     if (bodyParam.length > 0) {
       pathMethod.requestBody = {
+        required: true,
         content: {
           "application/json": {
             schema: this.getSwaggerType(bodyParam[0].type),
           },
         },
         description: bodyParam[0].description,
+      };
+    }
+
+    if (formDataParameter.length > 0) {
+      pathMethod.requestBody = {
+        required: true,
+        content: {
+          "multipart/form-data": {
+            schema: {
+              type: "object",
+              properties: formDataParameter.reduce((acc, param) => {
+                const paramType = this.getSwaggerType(param.type);
+                if (paramType) {
+                  if (!isReferenceObject(paramType)) {
+                    paramType.description = param.description;
+                  }
+                  // acc[param.name] = {type:paramType};
+                  acc[param.name] = paramType;
+                }
+                return acc;
+              }, {} as { [key: string]: Schema }),
+            },
+          },
+        },
       };
     }
     return pathMethod;
@@ -329,11 +357,11 @@ export class SpecGenerator {
 
   private buildOperation(controllerName: string, method: Method) {
     const operation: OpenAPIV3_1.OperationObject = {
-      operationId: this.getOperationId(controllerName, method.name)
+      operationId: this.getOperationId(controllerName, method.name),
     };
 
     method.responses.forEach((res: ResponseType) => {
-      if(!operation.responses) {
+      if (!operation.responses) {
         operation.responses = {};
       }
       operation.responses[res.status] = {
@@ -403,7 +431,7 @@ export class SpecGenerator {
     if (constType.typeName === "const") {
       return {
         const: constType.value,
-      }
+      };
     }
 
     const arrayType = type as ArrayType;

@@ -262,6 +262,49 @@ class ParameterGenerator {
         }
         return (0, resolveType_1.getLiteralValue)(initializer, this.morph);
     }
+    getFormParameter(parameter) {
+        const parameterName = parameter.name.text;
+        const type = this.getValidatedType(parameter);
+        if (!this.supportsBodyParameters(this.method)) {
+            throw new Error(`Form can't support '${this.getCurrentLocation()}' method.`);
+        }
+        return {
+            description: this.getParameterDescription(parameter),
+            in: "formData",
+            name: (0, decoratorUtils_1.getDecoratorTextValue)(this.parameter, (ident) => ident.text === "FormParam") || parameterName,
+            parameterName: parameterName,
+            required: !parameter.questionToken && !parameter.initializer,
+            type: type,
+        };
+    }
+    getFileParameter(parameter) {
+        const parameterName = parameter.name.text;
+        if (!this.supportsBodyParameters(this.method)) {
+            throw new Error(`FileParam can't support '${this.getCurrentLocation()}' method.`);
+        }
+        return {
+            description: this.getParameterDescription(parameter),
+            in: "formData",
+            name: (0, decoratorUtils_1.getDecoratorTextValue)(this.parameter, (ident) => ident.text === "FileParam") || parameterName,
+            parameterName: parameterName,
+            required: !parameter.questionToken,
+            type: { typeName: "file" },
+        };
+    }
+    getFilesParameter(parameter) {
+        const parameterName = parameter.name.text;
+        if (!this.supportsBodyParameters(this.method)) {
+            throw new Error(`FilesParam can't support '${this.getCurrentLocation()}' method.`);
+        }
+        return {
+            description: this.getParameterDescription(parameter),
+            in: "formData",
+            name: (0, decoratorUtils_1.getDecoratorTextValue)(this.parameter, (ident) => ident.text === "FilesParam") || parameterName,
+            parameterName: parameterName,
+            required: !parameter.questionToken,
+            type: { typeName: "file" },
+        };
+    }
 }
 exports.ParameterGenerator = ParameterGenerator;
 class InvalidParameterException extends Error {
