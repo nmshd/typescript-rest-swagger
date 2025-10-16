@@ -1,6 +1,18 @@
 'use strict';
 
-import { Accept, DELETE, GET, POST, PUT, Path, PathParam, QueryParam, Return, Security } from '@nmshd/typescript-rest';
+import {
+    Accept,
+    DELETE,
+    FormParam,
+    GET,
+    POST,
+    PUT,
+    Path,
+    PathParam,
+    QueryParam,
+    Return,
+    Security
+} from '@nmshd/typescript-rest';
 
 import * as swagger from '../../src/decorators';
 import { TestInterface } from './TestInterface';
@@ -169,6 +181,12 @@ export class MyService {
     @Path('test-compiler-options')
     public async testCompilerOptions(payload: TestInterface): Promise<TestInterface> {
         return { a: 'string', b: 123 };
+    }
+
+    @POST
+    @Path('test-form-param')
+    public testFormParam(@FormParam('id') id: string): string {
+        return id;
     }
 }
 
