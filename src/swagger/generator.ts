@@ -2,12 +2,13 @@ import * as debug from "debug";
 import * as fs from "fs";
 import { mkdir } from "fs/promises";
 import * as _ from "lodash";
-import { OpenAPIV3 } from "openapi-types";
+import { OpenAPIV3_1 } from "openapi-types";
 import * as pathUtil from "path";
 import * as YAML from "yamljs";
 import { SwaggerConfig } from "../config";
 import {
   ArrayType,
+  ConstType,
   EnumerateType,
   Metadata,
   Method,
@@ -146,7 +147,7 @@ export class SpecGenerator {
   // }
 
   private buildDefinitions() {
-    const definitions: { [definitionsName: string]: OpenAPIV3.SchemaObject } =
+    const definitions: { [definitionsName: string]: OpenAPIV3_1.SchemaObject } =
       {};
     Object.keys(this.metadata.referenceTypes).map((typeName) => {
       this.debugger("Generating definition for type: %s", typeName);
@@ -177,7 +178,7 @@ export class SpecGenerator {
   }
 
   private buildPaths() {
-    const paths: { [pathName: string]: OpenAPIV3.PathItemObject } = {};
+    const paths: { [pathName: string]: OpenAPIV3_1.PathItemObject } = {};
 
     this.debugger("Generating paths declarations");
     this.metadata.controllers.forEach((controller) => {
@@ -212,7 +213,7 @@ export class SpecGenerator {
   }
 
   private buildPathMethod(controllerName: string, method: Method) {
-    const pathMethod: OpenAPIV3.OperationObject = this.buildOperation(
+    const pathMethod: OpenAPIV3_1.OperationObject = this.buildOperation(
       controllerName,
       method
     );
@@ -278,8 +279,8 @@ export class SpecGenerator {
     return pathMethod;
   }
 
-  private buildParameter(parameter: Parameter): OpenAPIV3.ParameterObject {
-    const swaggerParameter: OpenAPIV3.ParameterObject = {
+  private buildParameter(parameter: Parameter): OpenAPIV3_1.ParameterObject {
+    const swaggerParameter: OpenAPIV3_1.ParameterObject = {
       description: parameter.description,
       in: parameter.in,
       name: parameter.name,
@@ -288,6 +289,7 @@ export class SpecGenerator {
 
     const parameterType = this.getSwaggerType(parameter.type);
 
+    //@ts-expect-error
     swaggerParameter.schema = parameterType;
 
     if (
@@ -297,7 +299,11 @@ export class SpecGenerator {
     ) {
       throw new Error("Default value is not allowed for reference types.");
     }
-    if (swaggerParameter.schema && !("$ref" in swaggerParameter.schema)) {
+    if (
+      swaggerParameter.schema &&
+      !("$ref" in swaggerParameter.schema) &&
+      parameter.default !== undefined
+    ) {
       swaggerParameter.schema.default = parameter.default;
     }
 
@@ -305,7 +311,7 @@ export class SpecGenerator {
   }
 
   private buildProperties(properties: Array<Property>) {
-    const swaggerProperties: OpenAPIV3.BaseSchemaObject["properties"] = {};
+    const swaggerProperties: OpenAPIV3_1.BaseSchemaObject["properties"] = {};
 
     properties.forEach((property) => {
       const swaggerType = this.getSwaggerType(property.type);
@@ -322,16 +328,18 @@ export class SpecGenerator {
   }
 
   private buildOperation(controllerName: string, method: Method) {
-    const operation: OpenAPIV3.OperationObject = {
-      operationId: this.getOperationId(controllerName, method.name),
-      responses: {},
+    const operation: OpenAPIV3_1.OperationObject = {
+      operationId: this.getOperationId(controllerName, method.name)
     };
 
     method.responses.forEach((res: ResponseType) => {
+      if(!operation.responses) {
+        operation.responses = {};
+      }
       operation.responses[res.status] = {
         description: res.description,
         content: {},
-      } as OpenAPIV3.ResponseObject;
+      } as OpenAPIV3_1.ResponseObject;
 
       if (res.schema) {
         const swaggerType = this.getSwaggerType(res.schema);
@@ -391,6 +399,13 @@ export class SpecGenerator {
       return swaggerType;
     }
 
+    const constType = type as ConstType;
+    if (constType.typeName === "const") {
+      return {
+        const: constType.value,
+      }
+    }
+
     const arrayType = type as ArrayType;
     if (arrayType.elementType) {
       return this.getSwaggerTypeForArrayType(arrayType);
@@ -422,7 +437,7 @@ export class SpecGenerator {
 
       _.each(
         groupedEnums,
-        (enums, type: OpenAPIV3.NonArraySchemaObjectType) => {
+        (enums, type: OpenAPIV3_1.NonArraySchemaObjectType) => {
           let enumValues = _.flatten(enums.map((e) => "enum" in e && e.enum));
           map.push({ type: type, enum: enumValues });
         }
@@ -439,7 +454,7 @@ export class SpecGenerator {
   }
 
   private getSwaggerTypeForPrimitiveType(type: Type) {
-    const typeMap: { [name: string]: OpenAPIV3.NonArraySchemaObject } = {
+    const typeMap: { [name: string]: OpenAPIV3_1.NonArraySchemaObject } = {
       binary: { type: "string", format: "binary" },
       boolean: { type: "boolean" },
       buffer: { type: "string", format: "binary" },
@@ -480,7 +495,7 @@ export class SpecGenerator {
   private getSwaggerTypeForEnumType(enumType: EnumerateType): Schema {
     function getDerivedTypeFromValues(
       values: Array<any>
-    ): OpenAPIV3.NonArraySchemaObjectType {
+    ): OpenAPIV3_1.NonArraySchemaObjectType {
       return values.reduce((derivedType: string, item) => {
         const currentType = typeof item;
         derivedType =
@@ -502,7 +517,7 @@ export class SpecGenerator {
 
   private getSwaggerTypeForReferenceType(
     referenceType: ReferenceType
-  ): OpenAPIV3.ReferenceObject {
+  ): OpenAPIV3_1.ReferenceObject {
     return { $ref: `#/components/schemas/${referenceType.typeName}` };
   }
 }

@@ -1,12 +1,18 @@
 import { Project } from "ts-morph";
 import * as ts from "typescript";
 import {
+  DecoratorData,
   getDecoratorName,
   getDecoratorOptions,
   getDecoratorTextValue,
 } from "../utils/decoratorUtils";
 import { getNodeAsTsMorphNode } from "../utils/utils";
-import { MetadataGenerator, Parameter, Type } from "./metadataGenerator";
+import {
+  isUnionType,
+  MetadataGenerator,
+  Parameter,
+  Type,
+} from "./metadataGenerator";
 import {
   getCommonPrimitiveAndArrayUnionType,
   getLiteralValue,
@@ -21,7 +27,7 @@ export class ParameterGenerator {
     private readonly morph: Project
   ) {}
 
-  public generate(): Parameter | undefined {
+  public generate(bodyDecorator?: DecoratorData): Parameter | undefined {
     const decoratorName = getDecoratorName(this.parameter, (identifier) =>
       this.supportParameterDecorator(identifier.text)
     );
@@ -31,12 +37,18 @@ export class ParameterGenerator {
         return this.getRequestParameter(this.parameter);
       case "CookieParam":
         return this.getCookieParameter(this.parameter);
+      case "FormParam":
+        return this.getFormParameter(this.parameter);
       case "HeaderParam":
         return this.getHeaderParameter(this.parameter);
       case "QueryParam":
         return this.getQueryParameter(this.parameter);
       case "PathParam":
         return this.getPathParameter(this.parameter);
+      case "FileParam":
+        return this.getFileParameter(this.parameter);
+      case "FilesParam":
+        return this.getFilesParameter(this.parameter);
       case "Context":
       case "ContextRequest":
       case "ContextResponse":
@@ -45,7 +57,7 @@ export class ParameterGenerator {
       case "ContextAccept":
         return this.getContextParameter(this.parameter);
       default:
-        return this.getBodyParameter(this.parameter);
+        return this.getBodyParameter(this.parameter, bodyDecorator);
     }
   }
 
@@ -117,8 +129,16 @@ export class ParameterGenerator {
     };
   }
 
-  private getBodyParameter(parameter: ts.ParameterDeclaration): Parameter {
+  private getBodyParameter(
+    parameter: ts.ParameterDeclaration,
+    bodyDecorator?: DecoratorData
+  ): Parameter {
     const parameterName = (parameter.name as ts.Identifier).text;
+    if (bodyDecorator) {
+      const type = bodyDecorator.typeArguments;
+      //TODO implement Body Type Decorator
+      debugger;
+    }
     const type = this.getValidatedType(parameter);
 
     if (!this.supportsBodyParameters(this.method)) {
@@ -167,6 +187,15 @@ export class ParameterGenerator {
         (ident) => ident.text === "QueryParam"
       ) || {};
     let type = this.getValidatedType(parameter);
+
+    if (isUnionType(type)) {
+      const typeWithoutUndefined = type.types.filter(
+        (t) => t.typeName !== "undefined"
+      );
+      if (typeWithoutUndefined.length === 1) {
+        type = typeWithoutUndefined[0];
+      }
+    }
 
     if (!this.supportQueryDataType(type)) {
       const arrayType = getCommonPrimitiveAndArrayUnionType(
@@ -335,7 +364,7 @@ export class ParameterGenerator {
     if (!initializer) {
       return;
     }
-    return getLiteralValue(initializer);
+    return getLiteralValue(initializer, this.morph);
   }
 }
 

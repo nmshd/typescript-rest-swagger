@@ -1,7 +1,7 @@
 import * as pathUtil from "path";
 import { MethodDeclaration, Project } from "ts-morph";
 import * as ts from "typescript";
-import { getDecorators } from "../utils/decoratorUtils";
+import { DecoratorData, getDecorators } from "../utils/decoratorUtils";
 import {
   getJSDocDescription,
   getJSDocTag,
@@ -76,14 +76,21 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
       this.getResponses(),
       this.getMethodSuccessResponse(type)
     );
-
+    const bodyDecorator = getDecorators(this.node, (decorator) => {
+      return decorator.text === "Body";
+    });
+    if (bodyDecorator && bodyDecorator.length > 1) {
+      throw new Error(
+        `Only one Body decorator allowed in '${this.getCurrentLocation()}' method.`
+      );
+    }
     const methodMetadata = {
       consumes: this.getDecoratorValues("Consumes"),
       deprecated: isExistJSDocTag(this.node, "deprecated"),
       description: getJSDocDescription(this.node),
       method: this.method,
       name: identifier.text,
-      parameters: this.buildParameters(),
+      parameters: this.buildParameters(bodyDecorator[0]),
       path: this.path,
       produces: this.getDecoratorValues("Produces")
         ? this.getDecoratorValues("Produces")
@@ -109,7 +116,7 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
     return `${controllerId.text}.${methodId.text}`;
   }
 
-  private buildParameters() {
+  private buildParameters(bodyDecorator: DecoratorData) {
     this.debugger(
       "Processing method %s parameters.",
       this.getCurrentLocation()
@@ -128,7 +135,7 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
             this.method,
             path,
             this.morph
-          ).generate();
+          ).generate(bodyDecorator);
         } catch (e) {
           const methodId = this.node.name as ts.Identifier;
           const controllerId = (this.node.parent as ts.ClassDeclaration)
@@ -147,6 +154,7 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
     const formParameters = parameters.filter((p) => p && p.in === "formData");
 
     if (bodyParameters.length > 1) {
+      debugger;
       throw new Error(
         `Only one body parameter allowed in '${this.getCurrentLocation()}' method.`
       );
@@ -238,7 +246,10 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
         return { status: "302", type: type.typeArgument || type };
       case "DownloadResource":
       case "DownloadBinaryData":
-        return { status: "200", type: { typeName: "buffer" } };
+        return {
+          status: "200",
+          type: { typeName: "buffer" },
+        };
       default:
         return { status: "200", type: type };
     }

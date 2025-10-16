@@ -1,8 +1,16 @@
-import { EnumDeclaration, Type as MorphType, Node } from "ts-morph";
+import {
+  EnumDeclaration,
+  Expression,
+  Type as MorphType,
+  Node,
+  Project,
+} from "ts-morph";
 import * as ts from "typescript";
 import { getJSDocDescriptionFromProperty } from "../utils/jsDocUtils";
+import { getNodeAsTsMorphNode } from "../utils/utils";
 import {
   ArrayType,
+  ConstType,
   EnumerateType,
   MetadataGenerator,
   ObjectType,
@@ -71,13 +79,12 @@ export function resolveType(
       break;
     // return resolveType(resolvedType, getTypeArgumentMap(resolvedType));
 
-    case typeObject.isEnumLiteral:
-      debugger;
-      break;
     case typeObject.isTuple:
+      //TODO
       debugger;
       break;
     case typeObject.isIntersection:
+      //TODO
       debugger;
       break;
 
@@ -95,19 +102,14 @@ export function resolveType(
       resultType = { typeName: "undefined" };
       break;
     case typeObject.isBoolean:
-    case typeObject.isBooleanLiteral:
       resultType = { typeName: "boolean" };
       break;
     case typeObject.isString:
-    case typeObject.isTemplateLiteral:
-    case typeObject.isStringLiteral:
       resultType = { typeName: "string" };
       break;
-    case typeObject.isNumberLiteral:
     case typeObject.isNumber:
       resultType = { typeName: "double" };
       break;
-    case typeObject.isBigIntLiteral:
     case typeObject.isBigInt:
       resultType = { typeName: "long" };
       break;
@@ -128,20 +130,30 @@ export function resolveType(
     case typeObject.isClass:
     case typeObject.isClassOrInterface:
     case typeObject.isObject:
-      const node = type.getSymbol()?.getDeclarations()[0];
+      const declarationNode = type.getSymbol()?.getDeclarations()[0];
 
-      if (!node) {
+      if (!declarationNode) {
         throw new Error(
           `Node is required to resolve type for ${type.getText()}`
         );
       }
 
-      let typeName = type.getText(node);
+      let typeName = type.getText(declarationNode);
 
       // sometimes the type text is the pure definition {prop:string} those need to be filtered out
       if (typeName.trim().startsWith("{")) {
         typeName = "";
       }
+      let typeNodeName = "";
+
+      if (Node.isTyped(node)) {
+        typeNodeName = node.getTypeNode()?.getText() ?? "";
+        if (typeNodeName.trim().startsWith("{")) {
+          typeNodeName = "";
+        }
+      }
+
+      typeName = typeName || typeNodeName;
 
       typeName = replaceNameText(typeName);
       const cachedType = MetadataGenerator.current.getReferenceType(typeName);
@@ -151,13 +163,16 @@ export function resolveType(
       const tc = MetadataGenerator.current.morph.getTypeChecker();
 
       const properties = type.getProperties().map<Property>((prop) => {
-        const tcType = tc.getTypeOfSymbolAtLocation(prop, node);
+        const tcType = tc.getTypeOfSymbolAtLocation(prop, declarationNode);
         const propNode = prop.getDeclarations()[0];
 
         // if (typeName === "Something") {
         // let a = undefined;
         // }
-        let description = getJSDocDescriptionFromProperty(propNode, node);
+        let description = getJSDocDescriptionFromProperty(
+          propNode,
+          declarationNode
+        );
 
         return {
           name: prop.getName(),
@@ -168,19 +183,21 @@ export function resolveType(
       });
 
       if (!typeName) {
-        return {
+        const objectType: ObjectType = {
           typeName: "",
           properties,
-        } as ObjectType;
+        };
+
+        return objectType;
       }
 
-      const referenceType = {
+      const referenceType: ReferenceType = {
         properties,
-        originalFileName: node.getSourceFile().getFilePath(),
+        originalFileName: declarationNode.getSourceFile().getFilePath(),
         typeName,
         simpleTypeName: type.getSymbol()?.getName() ?? "",
         description: "",
-      } as ReferenceType;
+      };
       MetadataGenerator.current.addReferenceType(referenceType);
       return referenceType;
 
@@ -200,7 +217,7 @@ export function resolveType(
         .map((a) => typeof a)
         .reduce((curr, next) => {
           if (!curr.includes(next)) {
-            curr.push(next);
+            curr.push(next.toString());
           }
           return curr;
         }, new Array<string>());
@@ -211,36 +228,82 @@ export function resolveType(
         );
       }
 
-      return {
+      const enumType: EnumerateType = {
         typeName: "enum",
-        enumMembers: enumMembers,
-      } as EnumerateType;
+        enumMembers: enumMembers.filter((m) => m !== undefined),
+      };
+      return enumType;
 
     case typeObject.isUnion:
       const types = type.getUnionTypes().map(getTypeObject);
-      const allTheSameLiteralType = types.every((t, i, a) => {
-        return t.isLiteral && JSON.stringify(a[0]) === JSON.stringify(t);
-      });
+
+      const allTheSameLiteralType = types
+        .filter((t) => !t.isUndefined)
+        .every((t, i, a) => {
+          return t.isLiteral && JSON.stringify(a[0]) === JSON.stringify(t);
+        });
+
       if (allTheSameLiteralType) {
-        return {
+        const enumType: EnumerateType = {
           typeName: "enum",
-          enumMembers: type.getUnionTypes().map((t) => t.getLiteralValue()),
-        } as EnumerateType;
+          enumMembers: type
+            .getUnionTypes()
+            .map((t) => t.getLiteralValue()?.toString() ?? ""),
+        };
+        return enumType;
       }
 
       const unionTypes = type.getUnionTypes().map((subType) => {
         return resolveType(subType, typeArgumentsMap);
       });
-      return {
-        types: unionTypes,
-        typeName: "",
-      } as UnionType;
 
+      // Remove duplicate types from union
+      const uniqueUnionTypes = unionTypes.filter((unionType, index) => {
+        const serializedUnionType = JSON.stringify(unionType);
+        return (
+          unionTypes.findIndex((t) => {
+            return JSON.stringify(t) === serializedUnionType;
+          }) === index
+        );
+      });
+
+      const unionType: UnionType = {
+        types: uniqueUnionTypes,
+        typeName: "",
+      };
+
+      return unionType;
+    case typeObject.isBooleanLiteral:
+    case typeObject.isTemplateLiteral:
+    case typeObject.isStringLiteral:
+    case typeObject.isEnumLiteral:
+    case typeObject.isNumberLiteral:
+    case typeObject.isBigIntLiteral:
+      if (!node) {
+        throw new Error(
+          `Node is required to resolve literal type for ${type.getText()}`
+        );
+      }
+      if(!Node.isExpression(node) && !Node.isPropertySignature(node)){
+        throw new Error(
+          `Node of type ${node.getKindName()} is not supported to resolve literal type for ${type.getText()}`
+        );
+      }
+      const literalValue = getLiteralValue(
+        node.compilerNode,
+        MetadataGenerator.current.morph
+      )
+      const literalType: ConstType = {
+        typeName: "const",
+        value: literalValue,
+      }
+      return literalType;
     case typeObject.isLiteral:
+      debugger;
+      break;
     default:
       const apparentType = type.getApparentType();
       if (apparentType) {
-        debugger;
         return resolveType(apparentType, typeArgumentsMap);
       }
       debugger;
@@ -281,25 +344,92 @@ export function getCommonPrimitiveAndArrayUnionType(
   return null;
 }
 
-export function getLiteralValue(expression: ts.Expression): any {
-  if (expression.kind === ts.SyntaxKind.StringLiteral) {
-    return (expression as ts.StringLiteral).text;
+export function getLiteralValue(
+  expression: ts.Expression | ts.PropertySignature,
+  morph: Project
+): any {
+  const morphNode = getNodeAsTsMorphNode(expression, morph);
+  const type = morphNode.getType();
+  const literalValue = type.getLiteralValue();
+  if (literalValue !== undefined) {
+    return literalValue;
   }
-  if (expression.kind === ts.SyntaxKind.NumericLiteral) {
-    return parseFloat((expression as ts.NumericLiteral).text);
+
+  if (Expression.isArrayLiteralExpression(morphNode)) {
+    const elements = morphNode
+      .getElements()
+      .map((e) => getLiteralValue(e.compilerNode, morph));
+    return elements;
   }
-  if (expression.kind === ts.SyntaxKind.TrueKeyword) {
+  if (Expression.isElementAccessExpression(morphNode)) {
+    const identifier = morphNode.getExpression();
+    const argumentExpression = morphNode.getArgumentExpression();
+    if (
+      argumentExpression &&
+      (Expression.isStringLiteral(argumentExpression) ||
+        Expression.isNumericLiteral(argumentExpression))
+    ) {
+      const identifierValue = getLiteralValue(identifier.compilerNode, morph);
+      const argumentValue = getLiteralValue(
+        argumentExpression.compilerNode,
+        morph
+      );
+      if (
+        Array.isArray(identifierValue) &&
+        (typeof argumentValue === "number" || typeof argumentValue === "string")
+      ) {
+        return identifierValue[argumentValue as number];
+      }
+    }
+  }
+
+  if (literalValue === undefined) {
+    const declaration = morphNode.getSymbol()?.getValueDeclaration();
+    const initializer =
+      Node.isInitializerExpressionGetable(declaration) &&
+      declaration.getInitializer();
+    if (initializer) {
+      return getLiteralValue(initializer.compilerNode, morph);
+    }
+  }
+
+  if (Node.isTrueLiteral(morphNode)) {
     return true;
   }
-  if (expression.kind === ts.SyntaxKind.FalseKeyword) {
+  if (Node.isFalseLiteral(morphNode)) {
     return false;
   }
-  if (expression.kind === ts.SyntaxKind.ArrayLiteralExpression) {
-    return (expression as ts.ArrayLiteralExpression).elements.map((e) =>
-      getLiteralValue(e)
-    );
-  }
-  return;
+
+  throw new Error(
+    `Could not resolve literal value for expression: ${expression.getText()}`
+  );
+  // if (expression.kind === ts.SyntaxKind.StringLiteral) {
+  //   return (expression as ts.StringLiteral).text;
+  // }
+  // if (expression.kind === ts.SyntaxKind.NumericLiteral) {
+  //   return parseFloat((expression as ts.NumericLiteral).text);
+  // }
+  // if (expression.kind === ts.SyntaxKind.TrueKeyword) {
+  //   return true;
+  // }
+  // if (expression.kind === ts.SyntaxKind.FalseKeyword) {
+  //   return false;
+  // }
+  // if (expression.kind === ts.SyntaxKind.ArrayLiteralExpression) {
+  //   return (expression as ts.ArrayLiteralExpression).elements.map((e) =>
+  //     getLiteralValue(e, morph)
+  //   );
+  // }
+  // if (expression.kind === ts.SyntaxKind.PropertyAccessExpression) {
+  //   const type = MetadataGenerator.current.morph
+  //     .getTypeChecker()
+  //     .getTypeAtLocation(morphNode);
+  //   debugger;
+  //   // if (type.isLiteral()) {
+  //   // return type.getLiteralValue();
+  //   // }
+  // }
+  // return;
 }
 
 function getTypeObject(type: MorphType) {

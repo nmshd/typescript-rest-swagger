@@ -1,5 +1,6 @@
 import { Project } from "ts-morph";
 import * as ts from "typescript";
+import { DecoratorData } from "../utils/decoratorUtils";
 import { Parameter } from "./metadataGenerator";
 export declare class ParameterGenerator {
     private readonly parameter;
@@ -7,7 +8,7 @@ export declare class ParameterGenerator {
     private readonly path;
     private readonly morph;
     constructor(parameter: ts.ParameterDeclaration, method: string, path: string, morph: Project);
-    generate(): Parameter | undefined;
+    generate(bodyDecorator?: DecoratorData): Parameter | undefined;
     private getCurrentLocation;
     private getRequestParameter;
     private getContextParameter;

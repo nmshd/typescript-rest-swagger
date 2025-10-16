@@ -45,13 +45,19 @@ class MethodGenerator extends endpointGenerator_1.EndpointGenerator {
         }
         const type = (0, resolveType_1.resolveType)(tsMorphNode.getReturnType(), undefined, tsMorphNode);
         const responses = this.mergeResponses(this.getResponses(), this.getMethodSuccessResponse(type));
+        const bodyDecorator = (0, decoratorUtils_1.getDecorators)(this.node, (decorator) => {
+            return decorator.text === "Body";
+        });
+        if (bodyDecorator && bodyDecorator.length > 1) {
+            throw new Error(`Only one Body decorator allowed in '${this.getCurrentLocation()}' method.`);
+        }
         const methodMetadata = {
             consumes: this.getDecoratorValues("Consumes"),
             deprecated: (0, jsDocUtils_1.isExistJSDocTag)(this.node, "deprecated"),
             description: (0, jsDocUtils_1.getJSDocDescription)(this.node),
             method: this.method,
             name: identifier.text,
-            parameters: this.buildParameters(),
+            parameters: this.buildParameters(bodyDecorator[0]),
             path: this.path,
             produces: this.getDecoratorValues("Produces")
                 ? this.getDecoratorValues("Produces")
@@ -71,13 +77,13 @@ class MethodGenerator extends endpointGenerator_1.EndpointGenerator {
             .name;
         return `${controllerId.text}.${methodId.text}`;
     }
-    buildParameters() {
+    buildParameters(bodyDecorator) {
         this.debugger("Processing method %s parameters.", this.getCurrentLocation());
         const parameters = this.node.parameters
             .map((p) => {
             try {
                 const path = pathUtil.posix.join("/", this.controllerPath ? this.controllerPath : "", this.path);
-                return new parameterGenerator_1.ParameterGenerator(p, this.method, path, this.morph).generate();
+                return new parameterGenerator_1.ParameterGenerator(p, this.method, path, this.morph).generate(bodyDecorator);
             }
             catch (e) {
                 const methodId = this.node.name;
@@ -91,6 +97,7 @@ class MethodGenerator extends endpointGenerator_1.EndpointGenerator {
         const bodyParameters = parameters.filter((p) => p && p.in === "body");
         const formParameters = parameters.filter((p) => p && p.in === "formData");
         if (bodyParameters.length > 1) {
+            debugger;
             throw new Error(`Only one body parameter allowed in '${this.getCurrentLocation()}' method.`);
         }
         if (bodyParameters.length > 0 && formParameters.length > 0) {
@@ -152,7 +159,10 @@ class MethodGenerator extends endpointGenerator_1.EndpointGenerator {
                 return { status: "302", type: type.typeArgument || type };
             case "DownloadResource":
             case "DownloadBinaryData":
-                return { status: "200", type: { typeName: "buffer" } };
+                return {
+                    status: "200",
+                    type: { typeName: "buffer" },
+                };
             default:
                 return { status: "200", type: type };
         }

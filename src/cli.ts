@@ -31,7 +31,7 @@ parser.add_argument("-c", "--config", {
 });
 
 parser.add_argument("-t", "--tsconfig", {
-  action: "storeTrue",
+  action: "store_true",
   default: false,
   help: "Load tsconfig.json file",
 });

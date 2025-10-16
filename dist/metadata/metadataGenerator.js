@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.MetadataGenerator = void 0;
+exports.isUnionType = exports.MetadataGenerator = void 0;
 const debug = require("debug");
 const glob_1 = require("glob");
 const minimatch_1 = require("minimatch");
@@ -28,6 +28,10 @@ class MetadataGenerator {
         this.debugger("Entry File: %j ", entryFile);
         this.debugger("Ts Config Path: %j ", tsConfigFilePath);
         this.morph = new ts_morph_1.Project({
+            compilerOptions: {
+                //Enforce strict null check as this ensures optional types are handled correctly
+                strictNullChecks: false,
+            },
             tsConfigFilePath: tsConfigFilePath,
         });
         this.morph.addSourceFilesAtPaths(entryFile);
@@ -110,4 +114,8 @@ class MetadataGenerator {
     }
 }
 exports.MetadataGenerator = MetadataGenerator;
+const isUnionType = (type) => {
+    return type.types !== undefined;
+};
+exports.isUnionType = isUnionType;
 //# sourceMappingURL=metadataGenerator.js.map

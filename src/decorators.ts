@@ -56,6 +56,12 @@ export function Example<T>(example: T): any {
   };
 }
 
+export function Body<T>(): any {
+  return () => {
+    return;
+  };
+}
+
 /**
  * Add tags for a given method on generated swagger documentation.
  * ```typescript

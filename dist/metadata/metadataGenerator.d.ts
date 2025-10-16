@@ -76,18 +76,23 @@ export interface Security {
     scopes?: Array<string>;
 }
 export interface Type {
-    typeName: "array" | "object" | "void" | "string" | "double" | "boolean" | "buffer" | "integer" | "long" | "float" | "date" | "datetime" | "enum" | "undefined" | string;
+    typeName: "array" | "object" | "void" | "string" | "double" | "boolean" | "buffer" | "integer" | "long" | "float" | "date" | "datetime" | "enum" | "undefined" | "const" | string;
     simpleTypeName?: string;
     typeArgument?: Type;
 }
+export interface ConstType extends Type {
+    typeName: "const";
+    value: string | number | boolean | object;
+}
 export interface EnumerateType extends Type {
     typeName: "enum";
-    enumMembers: Array<string>;
+    enumMembers: Array<string | number>;
 }
 export interface UnionType extends Type {
     typeName: string;
     types: Array<Type>;
 }
+export declare const isUnionType: (type: Type) => type is UnionType;
 export interface ReferenceType extends Type {
     typeName: string;
     description: string;

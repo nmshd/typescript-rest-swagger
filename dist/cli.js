@@ -26,7 +26,7 @@ parser.add_argument("-c", "--config", {
     help: "The swagger config file (swagger.json or swagger.yml or swaggerCongig.js).",
 });
 parser.add_argument("-t", "--tsconfig", {
-    action: "storeTrue",
+    action: "store_true",
     default: false,
     help: "Load tsconfig.json file",
 });

@@ -33,6 +33,10 @@ export class MetadataGenerator {
     this.debugger("Entry File: %j ", entryFile);
     this.debugger("Ts Config Path: %j ", tsConfigFilePath);
     this.morph = new Project({
+      compilerOptions: {
+        //Enforce strict null check as this ensures optional types are handled correctly
+        strictNullChecks: false,
+      },
       tsConfigFilePath: tsConfigFilePath,
     });
     this.morph.addSourceFilesAtPaths(entryFile);
@@ -188,7 +192,6 @@ export interface Security {
   scopes?: Array<string>;
 }
 
-
 export interface Type {
   typeName:
     | "array"
@@ -205,20 +208,30 @@ export interface Type {
     | "datetime"
     | "enum"
     | "undefined"
+    | "const"
     | string;
   simpleTypeName?: string;
   typeArgument?: Type;
 }
 
+export interface ConstType extends Type {
+  typeName: "const";
+  value: string | number | boolean | object;
+}
+
 export interface EnumerateType extends Type {
   typeName: "enum";
-  enumMembers: Array<string>;
+  enumMembers: Array<string | number>;
 }
 
 export interface UnionType extends Type {
   typeName: string;
   types: Array<Type>;
 }
+
+export const isUnionType = (type: Type): type is UnionType => {
+  return (type as UnionType).types !== undefined;
+};
 
 export interface ReferenceType extends Type {
   typeName: string;

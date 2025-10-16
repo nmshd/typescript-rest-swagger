@@ -211,13 +211,16 @@ class SpecGenerator {
             required: parameter.required,
         };
         const parameterType = this.getSwaggerType(parameter.type);
+        //@ts-expect-error
         swaggerParameter.schema = parameterType;
         if (swaggerParameter.schema &&
             "$ref" in swaggerParameter.schema &&
             parameter.default) {
             throw new Error("Default value is not allowed for reference types.");
         }
-        if (swaggerParameter.schema && !("$ref" in swaggerParameter.schema)) {
+        if (swaggerParameter.schema &&
+            !("$ref" in swaggerParameter.schema) &&
+            parameter.default !== undefined) {
             swaggerParameter.schema.default = parameter.default;
         }
         return swaggerParameter;
@@ -238,10 +241,12 @@ class SpecGenerator {
     }
     buildOperation(controllerName, method) {
         const operation = {
-            operationId: this.getOperationId(controllerName, method.name),
-            responses: {},
+            operationId: this.getOperationId(controllerName, method.name)
         };
         method.responses.forEach((res) => {
+            if (!operation.responses) {
+                operation.responses = {};
+            }
             operation.responses[res.status] = {
                 description: res.description,
                 content: {},
@@ -293,6 +298,12 @@ class SpecGenerator {
         const swaggerType = this.getSwaggerTypeForPrimitiveType(type);
         if (swaggerType) {
             return swaggerType;
+        }
+        const constType = type;
+        if (constType.typeName === "const") {
+            return {
+                const: constType.value,
+            };
         }
         const arrayType = type;
         if (arrayType.elementType) {

@@ -17,19 +17,25 @@ class ParameterGenerator {
         this.path = path;
         this.morph = morph;
     }
-    generate() {
+    generate(bodyDecorator) {
         const decoratorName = (0, decoratorUtils_1.getDecoratorName)(this.parameter, (identifier) => this.supportParameterDecorator(identifier.text));
         switch (decoratorName) {
             case "Param":
                 return this.getRequestParameter(this.parameter);
             case "CookieParam":
                 return this.getCookieParameter(this.parameter);
+            case "FormParam":
+                return this.getFormParameter(this.parameter);
             case "HeaderParam":
                 return this.getHeaderParameter(this.parameter);
             case "QueryParam":
                 return this.getQueryParameter(this.parameter);
             case "PathParam":
                 return this.getPathParameter(this.parameter);
+            case "FileParam":
+                return this.getFileParameter(this.parameter);
+            case "FilesParam":
+                return this.getFilesParameter(this.parameter);
             case "Context":
             case "ContextRequest":
             case "ContextResponse":
@@ -38,7 +44,7 @@ class ParameterGenerator {
             case "ContextAccept":
                 return this.getContextParameter(this.parameter);
             default:
-                return this.getBodyParameter(this.parameter);
+                return this.getBodyParameter(this.parameter, bodyDecorator);
         }
     }
     getCurrentLocation() {
@@ -89,8 +95,13 @@ class ParameterGenerator {
             type: { typeName: "" },
         };
     }
-    getBodyParameter(parameter) {
+    getBodyParameter(parameter, bodyDecorator) {
         const parameterName = parameter.name.text;
+        if (bodyDecorator) {
+            const type = bodyDecorator.typeArguments;
+            //TODO implement Body Type Decorator
+            debugger;
+        }
         const type = this.getValidatedType(parameter);
         if (!this.supportsBodyParameters(this.method)) {
             throw new Error(`Body can't support ${this.method} method`);
@@ -123,6 +134,12 @@ class ParameterGenerator {
         const parameterName = parameter.name.text;
         const parameterOptions = (0, decoratorUtils_1.getDecoratorOptions)(this.parameter, (ident) => ident.text === "QueryParam") || {};
         let type = this.getValidatedType(parameter);
+        if ((0, metadataGenerator_1.isUnionType)(type)) {
+            const typeWithoutUndefined = type.types.filter((t) => t.typeName !== "undefined");
+            if (typeWithoutUndefined.length === 1) {
+                type = typeWithoutUndefined[0];
+            }
+        }
         if (!this.supportQueryDataType(type)) {
             const arrayType = (0, resolveType_1.getCommonPrimitiveAndArrayUnionType)((0, utils_1.getNodeAsTsMorphNode)(parameter, this.morph).getType());
             if (arrayType && this.supportQueryDataType(arrayType)) {
@@ -243,7 +260,7 @@ class ParameterGenerator {
         if (!initializer) {
             return;
         }
-        return (0, resolveType_1.getLiteralValue)(initializer);
+        return (0, resolveType_1.getLiteralValue)(initializer, this.morph);
     }
 }
 exports.ParameterGenerator = ParameterGenerator;

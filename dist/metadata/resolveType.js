@@ -6,6 +6,7 @@ exports.getLiteralValue = getLiteralValue;
 const ts_morph_1 = require("ts-morph");
 const ts = require("typescript");
 const jsDocUtils_1 = require("../utils/jsDocUtils");
+const utils_1 = require("../utils/utils");
 const metadataGenerator_1 = require("./metadataGenerator");
 const syntaxKindMap = {};
 syntaxKindMap[ts.SyntaxKind.NumberKeyword] = "number";
@@ -49,13 +50,12 @@ function resolveType(type, parentTypeMap, node) {
             debugger;
             break;
         // return resolveType(resolvedType, getTypeArgumentMap(resolvedType));
-        case typeObject.isEnumLiteral:
-            debugger;
-            break;
         case typeObject.isTuple:
+            //TODO
             debugger;
             break;
         case typeObject.isIntersection:
+            //TODO
             debugger;
             break;
         case typeObject.isAny:
@@ -71,19 +71,14 @@ function resolveType(type, parentTypeMap, node) {
             resultType = { typeName: "undefined" };
             break;
         case typeObject.isBoolean:
-        case typeObject.isBooleanLiteral:
             resultType = { typeName: "boolean" };
             break;
         case typeObject.isString:
-        case typeObject.isTemplateLiteral:
-        case typeObject.isStringLiteral:
             resultType = { typeName: "string" };
             break;
-        case typeObject.isNumberLiteral:
         case typeObject.isNumber:
             resultType = { typeName: "double" };
             break;
-        case typeObject.isBigIntLiteral:
         case typeObject.isBigInt:
             resultType = { typeName: "long" };
             break;
@@ -102,15 +97,23 @@ function resolveType(type, parentTypeMap, node) {
         case typeObject.isClass:
         case typeObject.isClassOrInterface:
         case typeObject.isObject:
-            const node = type.getSymbol()?.getDeclarations()[0];
-            if (!node) {
+            const declarationNode = type.getSymbol()?.getDeclarations()[0];
+            if (!declarationNode) {
                 throw new Error(`Node is required to resolve type for ${type.getText()}`);
             }
-            let typeName = type.getText(node);
+            let typeName = type.getText(declarationNode);
             // sometimes the type text is the pure definition {prop:string} those need to be filtered out
             if (typeName.trim().startsWith("{")) {
                 typeName = "";
             }
+            let typeNodeName = "";
+            if (ts_morph_1.Node.isTyped(node)) {
+                typeNodeName = node.getTypeNode()?.getText() ?? "";
+                if (typeNodeName.trim().startsWith("{")) {
+                    typeNodeName = "";
+                }
+            }
+            typeName = typeName || typeNodeName;
             typeName = replaceNameText(typeName);
             const cachedType = metadataGenerator_1.MetadataGenerator.current.getReferenceType(typeName);
             if (cachedType) {
@@ -118,12 +121,12 @@ function resolveType(type, parentTypeMap, node) {
             }
             const tc = metadataGenerator_1.MetadataGenerator.current.morph.getTypeChecker();
             const properties = type.getProperties().map((prop) => {
-                const tcType = tc.getTypeOfSymbolAtLocation(prop, node);
+                const tcType = tc.getTypeOfSymbolAtLocation(prop, declarationNode);
                 const propNode = prop.getDeclarations()[0];
                 // if (typeName === "Something") {
                 // let a = undefined;
                 // }
-                let description = (0, jsDocUtils_1.getJSDocDescriptionFromProperty)(propNode, node);
+                let description = (0, jsDocUtils_1.getJSDocDescriptionFromProperty)(propNode, declarationNode);
                 return {
                     name: prop.getName(),
                     required: !prop.isOptional(),
@@ -132,14 +135,15 @@ function resolveType(type, parentTypeMap, node) {
                 };
             });
             if (!typeName) {
-                return {
+                const objectType = {
                     typeName: "",
                     properties,
                 };
+                return objectType;
             }
             const referenceType = {
                 properties,
-                originalFileName: node.getSourceFile().getFilePath(),
+                originalFileName: declarationNode.getSourceFile().getFilePath(),
                 typeName,
                 simpleTypeName: type.getSymbol()?.getName() ?? "",
                 description: "",
@@ -160,7 +164,7 @@ function resolveType(type, parentTypeMap, node) {
                 .map((a) => typeof a)
                 .reduce((curr, next) => {
                 if (!curr.includes(next)) {
-                    curr.push(next);
+                    curr.push(next.toString());
                 }
                 return curr;
             }, new Array());
@@ -168,33 +172,66 @@ function resolveType(type, parentTypeMap, node) {
                 throw new Error(`Mixed enum types are not supported by OpenAPI/Swagger.
           Enum ${type.getText()} has mixed types.`);
             }
-            return {
+            const enumType = {
                 typeName: "enum",
-                enumMembers: enumMembers,
+                enumMembers: enumMembers.filter((m) => m !== undefined),
             };
+            return enumType;
         case typeObject.isUnion:
             const types = type.getUnionTypes().map(getTypeObject);
-            const allTheSameLiteralType = types.every((t, i, a) => {
+            const allTheSameLiteralType = types
+                .filter((t) => !t.isUndefined)
+                .every((t, i, a) => {
                 return t.isLiteral && JSON.stringify(a[0]) === JSON.stringify(t);
             });
             if (allTheSameLiteralType) {
-                return {
+                const enumType = {
                     typeName: "enum",
-                    enumMembers: type.getUnionTypes().map((t) => t.getLiteralValue()),
+                    enumMembers: type
+                        .getUnionTypes()
+                        .map((t) => t.getLiteralValue()?.toString() ?? ""),
                 };
+                return enumType;
             }
             const unionTypes = type.getUnionTypes().map((subType) => {
                 return resolveType(subType, typeArgumentsMap);
             });
-            return {
-                types: unionTypes,
+            // Remove duplicate types from union
+            const uniqueUnionTypes = unionTypes.filter((unionType, index) => {
+                const serializedUnionType = JSON.stringify(unionType);
+                return (unionTypes.findIndex((t) => {
+                    return JSON.stringify(t) === serializedUnionType;
+                }) === index);
+            });
+            const unionType = {
+                types: uniqueUnionTypes,
                 typeName: "",
             };
+            return unionType;
+        case typeObject.isBooleanLiteral:
+        case typeObject.isTemplateLiteral:
+        case typeObject.isStringLiteral:
+        case typeObject.isEnumLiteral:
+        case typeObject.isNumberLiteral:
+        case typeObject.isBigIntLiteral:
+            if (!node) {
+                throw new Error(`Node is required to resolve literal type for ${type.getText()}`);
+            }
+            if (!ts_morph_1.Node.isExpression(node) && !ts_morph_1.Node.isPropertySignature(node)) {
+                throw new Error(`Node of type ${node.getKindName()} is not supported to resolve literal type for ${type.getText()}`);
+            }
+            const literalValue = getLiteralValue(node.compilerNode, metadataGenerator_1.MetadataGenerator.current.morph);
+            const literalType = {
+                typeName: "const",
+                value: literalValue,
+            };
+            return literalType;
         case typeObject.isLiteral:
+            debugger;
+            break;
         default:
             const apparentType = type.getApparentType();
             if (apparentType) {
-                debugger;
                 return resolveType(apparentType, typeArgumentsMap);
             }
             debugger;
@@ -225,23 +262,75 @@ function getCommonPrimitiveAndArrayUnionType(type) {
     }
     return null;
 }
-function getLiteralValue(expression) {
-    if (expression.kind === ts.SyntaxKind.StringLiteral) {
-        return expression.text;
+function getLiteralValue(expression, morph) {
+    const morphNode = (0, utils_1.getNodeAsTsMorphNode)(expression, morph);
+    const type = morphNode.getType();
+    const literalValue = type.getLiteralValue();
+    if (literalValue !== undefined) {
+        return literalValue;
     }
-    if (expression.kind === ts.SyntaxKind.NumericLiteral) {
-        return parseFloat(expression.text);
+    if (ts_morph_1.Expression.isArrayLiteralExpression(morphNode)) {
+        const elements = morphNode
+            .getElements()
+            .map((e) => getLiteralValue(e.compilerNode, morph));
+        return elements;
     }
-    if (expression.kind === ts.SyntaxKind.TrueKeyword) {
+    if (ts_morph_1.Expression.isElementAccessExpression(morphNode)) {
+        const identifier = morphNode.getExpression();
+        const argumentExpression = morphNode.getArgumentExpression();
+        if (argumentExpression &&
+            (ts_morph_1.Expression.isStringLiteral(argumentExpression) ||
+                ts_morph_1.Expression.isNumericLiteral(argumentExpression))) {
+            const identifierValue = getLiteralValue(identifier.compilerNode, morph);
+            const argumentValue = getLiteralValue(argumentExpression.compilerNode, morph);
+            if (Array.isArray(identifierValue) &&
+                (typeof argumentValue === "number" || typeof argumentValue === "string")) {
+                return identifierValue[argumentValue];
+            }
+        }
+    }
+    if (literalValue === undefined) {
+        const declaration = morphNode.getSymbol()?.getValueDeclaration();
+        const initializer = ts_morph_1.Node.isInitializerExpressionGetable(declaration) &&
+            declaration.getInitializer();
+        if (initializer) {
+            return getLiteralValue(initializer.compilerNode, morph);
+        }
+    }
+    if (ts_morph_1.Node.isTrueLiteral(morphNode)) {
         return true;
     }
-    if (expression.kind === ts.SyntaxKind.FalseKeyword) {
+    if (ts_morph_1.Node.isFalseLiteral(morphNode)) {
         return false;
     }
-    if (expression.kind === ts.SyntaxKind.ArrayLiteralExpression) {
-        return expression.elements.map((e) => getLiteralValue(e));
-    }
-    return;
+    throw new Error(`Could not resolve literal value for expression: ${expression.getText()}`);
+    // if (expression.kind === ts.SyntaxKind.StringLiteral) {
+    //   return (expression as ts.StringLiteral).text;
+    // }
+    // if (expression.kind === ts.SyntaxKind.NumericLiteral) {
+    //   return parseFloat((expression as ts.NumericLiteral).text);
+    // }
+    // if (expression.kind === ts.SyntaxKind.TrueKeyword) {
+    //   return true;
+    // }
+    // if (expression.kind === ts.SyntaxKind.FalseKeyword) {
+    //   return false;
+    // }
+    // if (expression.kind === ts.SyntaxKind.ArrayLiteralExpression) {
+    //   return (expression as ts.ArrayLiteralExpression).elements.map((e) =>
+    //     getLiteralValue(e, morph)
+    //   );
+    // }
+    // if (expression.kind === ts.SyntaxKind.PropertyAccessExpression) {
+    //   const type = MetadataGenerator.current.morph
+    //     .getTypeChecker()
+    //     .getTypeAtLocation(morphNode);
+    //   debugger;
+    //   // if (type.isLiteral()) {
+    //   // return type.getLiteralValue();
+    //   // }
+    // }
+    // return;
 }
 function getTypeObject(type) {
     const typeObject = {

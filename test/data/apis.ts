@@ -11,7 +11,7 @@ import {
   QueryParam,
   Return,
   Security,
-} from "typescript-rest";
+} from "@nmshd/typescript-rest";
 
 import * as swagger from "../../src/decorators";
 import { TestInterface } from "./TestInterface";
@@ -94,7 +94,8 @@ export class MyService {
     @QueryParam("testDefault") test2: string = "value",
     @QueryParam("testOptional") test3?: string,
     @QueryParam("testEnum") test4?: TestEnum,
-    @QueryParam("testNumericEnum") test5?: TestNumericEnum
+    @QueryParam("testNumericEnum") test5?: TestNumericEnum,
+    @QueryParam("testOptionalWithArray") test6?: string | string[],
   ): Person {
     return { name: "OK" };
   }
@@ -240,7 +241,7 @@ export class PromiseService extends BaseService {
     @QueryParam("testParam") test?: string
   ): Promise<Return.DownloadBinaryData> {
     return new Promise<Return.DownloadBinaryData>((resolve, reject) => {
-      resolve(null);
+      resolve({ content: Buffer.from("test"), fileName: "test.text" , mimeType: "application/text" });
     });
   }
 }
@@ -534,7 +535,7 @@ export class SecureEndpoint {
   }
 
   @POST
-  @Security([], "user_email")
+  @Security(["**"], "user_email")
   public post(): string {
     return "Posted";
   }
@@ -543,7 +544,7 @@ export class SecureEndpoint {
 @Path("supersecure")
 @Security("access_token")
 @Security("user_email")
-@Security()
+@Security(["**"], "user_email")
 export class SuperSecureEndpoint {
   @GET
   public get(): string {

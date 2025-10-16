@@ -1,17 +1,12 @@
-import * as swaggerParser from "@apidevtools/swagger-parser";
+import * as SwaggerParser from "@apidevtools/swagger-parser";
 import { cloneDeep } from "lodash";
 import { MetadataGenerator } from "../src/metadata/metadataGenerator";
 import { SpecGenerator } from "../src/swagger/generator";
 import { Swagger } from "../src/swagger/swagger";
 import { getDefaultOptions } from "./data/defaultOptions";
+import YAML = require("yamljs");
 
 (async function () {
-  const compilerOptions = {
-    baseUrl: ".",
-    paths: {
-      "@/*": ["test/data/*"],
-    },
-  };
   const metadata = new MetadataGenerator(
     ["./test/data/apidebug.ts"],
     "./test/tsconfig.json",
@@ -20,9 +15,9 @@ import { getDefaultOptions } from "./data/defaultOptions";
     metadata,
     getDefaultOptions()
   ).getOpenApiSpec();
-  const specDeRef = (await swaggerParser.dereference(
+  const specDeRef = (await SwaggerParser.dereference(
     cloneDeep(spec) as any
   )) as unknown as Swagger.Spec;
-  JSON.stringify(specDeRef);
+  const yamlString = YAML.stringify(spec, 100, 2);
   debugger;
 })();

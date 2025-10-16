@@ -40,6 +40,7 @@ export declare function Response<T>(name: number, description?: string, example?
  * @param example The example returned object
  */
 export declare function Example<T>(example: T): any;
+export declare function Body<T>(): any;
 /**
  * Add tags for a given method on generated swagger documentation.
  * ```typescript

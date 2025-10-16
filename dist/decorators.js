@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Response = Response;
 exports.Example = Example;
+exports.Body = Body;
 exports.Tags = Tags;
 exports.Consumes = Consumes;
 exports.Produces = Produces;
@@ -58,6 +59,11 @@ function Response(name, description, example) {
  * @param example The example returned object
  */
 function Example(example) {
+    return () => {
+        return;
+    };
+}
+function Body() {
     return () => {
         return;
     };
