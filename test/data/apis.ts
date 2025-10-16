@@ -1,17 +1,6 @@
 'use strict';
 
-import {
-    Accept,
-    DELETE,
-    GET,
-    POST,
-    PUT,
-    Path,
-    PathParam,
-    QueryParam,
-    Return,
-    Security,
-} from "@nmshd/typescript-rest";
+import { Accept, DELETE, GET, POST, PUT, Path, PathParam, QueryParam, Return, Security } from '@nmshd/typescript-rest';
 
 import * as swagger from '../../src/decorators';
 import { TestInterface } from './TestInterface';
@@ -67,38 +56,38 @@ enum TestNumericEnum {
     Option2
 }
 
-@Accept("text/plain")
-@Path("mypath")
-@swagger.Tags("My Services")
+@Accept('text/plain')
+@Path('mypath')
+@swagger.Tags('My Services')
 export class MyService {
-  @swagger.Response<string>(400, "The request format was incorrect.")
-  @swagger.Response<string>(500, "There was an unexpected error.")
-  @GET
-  @Accept("text/html")
-  public test(): string {
-    return "OK";
-  }
+    @swagger.Response<string>(400, 'The request format was incorrect.')
+    @swagger.Response<string>(500, 'There was an unexpected error.')
+    @GET
+    @Accept('text/html')
+    public test(): string {
+        return 'OK';
+    }
 
-  /**
-   * This is the method description
-   * @param test This is the test param description
-   */
-  @GET
-  @Path("secondpath")
-  @swagger.Example<Person>({
-    name: "Joe",
-  })
-  @swagger.Response<Person>(200, "The success test.")
-  public test2(
-    @QueryParam("testRequired") test: string,
-    @QueryParam("testDefault") test2: string = "value",
-    @QueryParam("testOptional") test3?: string,
-    @QueryParam("testEnum") test4?: TestEnum,
-    @QueryParam("testNumericEnum") test5?: TestNumericEnum,
-    @QueryParam("testOptionalWithArray") test6?: string | string[],
-  ): Person {
-    return { name: "OK" };
-  }
+    /**
+     * This is the method description
+     * @param test This is the test param description
+     */
+    @GET
+    @Path('secondpath')
+    @swagger.Example<Person>({
+        name: 'Joe'
+    })
+    @swagger.Response<Person>(200, 'The success test.')
+    public test2(
+        @QueryParam('testRequired') test: string,
+        @QueryParam('testDefault') test2: string = 'value',
+        @QueryParam('testOptional') test3?: string,
+        @QueryParam('testEnum') test4?: TestEnum,
+        @QueryParam('testNumericEnum') test5?: TestNumericEnum,
+        @QueryParam('testOptionalWithArray') test6?: string | string[]
+    ): Person {
+        return { name: 'OK' };
+    }
 
     @GET
     @Path('generic')
@@ -176,13 +165,11 @@ export class MyService {
         return;
     }
 
-  @POST
-  @Path("test-compiler-options")
-  public async testCompilerOptions(
-    payload: TestInterface
-  ): Promise<TestInterface> {
-    return { a: "string", b: 123 };
-  }
+    @POST
+    @Path('test-compiler-options')
+    public async testCompilerOptions(payload: TestInterface): Promise<TestInterface> {
+        return { a: 'string', b: 123 };
+    }
 }
 
 class BaseService {
@@ -230,16 +217,14 @@ export class PromiseService extends BaseService {
         });
     }
 
-  @GET
-  @Path("myFile")
-  @swagger.Produces("application/pdf")
-  public testFile(
-    @QueryParam("testParam") test?: string
-  ): Promise<Return.DownloadBinaryData> {
-    return new Promise<Return.DownloadBinaryData>((resolve, reject) => {
-      resolve({ content: Buffer.from("test"), fileName: "test.text" , mimeType: "application/text" });
-    });
-  }
+    @GET
+    @Path('myFile')
+    @swagger.Produces('application/pdf')
+    public testFile(@QueryParam('testParam') test?: string): Promise<Return.DownloadBinaryData> {
+        return new Promise<Return.DownloadBinaryData>((resolve, reject) => {
+            resolve({ content: Buffer.from('test'), fileName: 'test.text', mimeType: 'application/text' });
+        });
+    }
 }
 
 export class BasicModel {
@@ -454,17 +439,17 @@ export class PrimitiveEndpoint {
         return { data: ['hello', 'world'] };
     }
 
-  @Path("/array")
-  @GET
-  public getArray(): ResponseBody<Array<string>> {
-    return { data: ["hello", "world"] };
-  }
+    @Path('/array')
+    @GET
+    public getArray(): ResponseBody<Array<string>> {
+        return { data: ['hello', 'world'] };
+    }
 
-  @Path("/date")
-  @POST
-  public getDate(@swagger.IsDate date: Date): ResponseBody<Date> {
-    return { data: new Date() };
-  }
+    @Path('/date')
+    @POST
+    public getDate(@swagger.IsDate date: Date): ResponseBody<Date> {
+        return { data: new Date() };
+    }
 }
 
 @Path('parameterized/:objectId')
@@ -483,10 +468,10 @@ export abstract class Entity {
     public id?: number;
 }
 export abstract class Entity2 {
-  /**
-   * A numeric identifier2
-   */
-  public id?: number;
+    /**
+     * A numeric identifier2
+     */
+    public id?: number;
 }
 
 export class NamedEntity implements Entity {
@@ -495,28 +480,28 @@ export class NamedEntity implements Entity {
 }
 
 export class NamedExtendEntity extends Entity {
-  public id: number;
-  public name: string;
+    public id: number;
+    public name: string;
 }
 export class NamedBothEntity extends Entity implements Entity2 {
-  public id: number;
-  public name: string;
+    public id: number;
+    public name: string;
 }
 
-@Path("abstract")
+@Path('abstract')
 export class AbstractEntityEndpoint {
-  @GET
-  public get(): NamedEntity {
-    return new NamedEntity();
-  }
-  @POST
-  public post(): NamedExtendEntity {
-    return new NamedExtendEntity();
-  }
-  @PUT
-  public put(): NamedBothEntity {
-    return new NamedBothEntity();
-  }
+    @GET
+    public get(): NamedEntity {
+        return new NamedEntity();
+    }
+    @POST
+    public post(): NamedExtendEntity {
+        return new NamedExtendEntity();
+    }
+    @PUT
+    public put(): NamedBothEntity {
+        return new NamedBothEntity();
+    }
 }
 
 @Path('secure')
@@ -527,17 +512,17 @@ export class SecureEndpoint {
         return 'Access Granted';
     }
 
-  @POST
-  @Security(["**"], "user_email")
-  public post(): string {
-    return "Posted";
-  }
+    @POST
+    @Security(['**'], 'user_email')
+    public post(): string {
+        return 'Posted';
+    }
 }
 
-@Path("supersecure")
-@Security("access_token")
-@Security("user_email")
-@Security(["**"], "user_email")
+@Path('supersecure')
+@Security('access_token')
+@Security('user_email')
+@Security(['**'], 'user_email')
 export class SuperSecureEndpoint {
     @GET
     public get(): string {

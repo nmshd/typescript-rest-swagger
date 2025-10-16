@@ -148,9 +148,9 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
                 }' method is acceptable, Found: ${httpMethodDecorators.map((d) => d.text).join(', ')}`
             );
         }
-        if (pathDecorators) {
+        if (pathDecorators && pathDecorators.length === 1) {
             const pathDecorator = pathDecorators[0];
-            const argument = pathDecorator.arguments[0];
+            const argument = pathDecorator?.arguments[0];
             if (argument && typeof argument !== 'string') {
                 throw new Error(
                     `Only string literal arguments are allowed in Path decorator in '${this.getCurrentLocation()}' method.`
