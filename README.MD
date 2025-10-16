@@ -4,22 +4,23 @@
 [![Known Vulnerabilities](https://snyk.io/test/github/thiagobustamante/typescript-rest-swagger/badge.svg?targetFile=package.json)](https://snyk.io/test/github/thiagobustamante/typescript-rest-swagger?targetFile=package.json)
 
 # Swagger for Typescript-rest
+
 This is a tool to generate swagger files from a [typescript-rest](https://github.com/thiagobustamante/typescript-rest) project.
 
-**Table of Contents** 
+**Table of Contents**
 
-- [Swagger for Typescript-rest](#swagger-for-typescript-rest)
-  - [Installation](#installation)
-  - [Usage](#usage)
-    - [Swagger Decorators](#swagger-decorators)
-      - [@Response](#response)
-      - [@Example](#example)
-      - [@Tags](#tags)
-      - [@Consumes](#consumes)
-      - [@Produces](#produces)
-      - [@Hidden](#hidden)
-      - [@IsInt, @IsLong, @IsFloat, @IsDouble](#isint-islong-isfloat-isdouble)
-    - [SwaggerConfig.json](#swaggerconfigjson)
+-   [Swagger for Typescript-rest](#swagger-for-typescript-rest)
+    -   [Installation](#installation)
+    -   [Usage](#usage)
+        -   [Swagger Decorators](#swagger-decorators)
+            -   [@Response](#response)
+            -   [@Example](#example)
+            -   [@Tags](#tags)
+            -   [@Consumes](#consumes)
+            -   [@Produces](#produces)
+            -   [@Hidden](#hidden)
+            -   [@IsInt, @IsLong, @IsFloat, @IsDouble](#isint-islong-isfloat-isdouble)
+        -   [SwaggerConfig.json](#swaggerconfigjson)
 
 ## Installation
 
@@ -70,22 +71,22 @@ However, there are some additional informations that can be provided, only with 
 Some examples:
 
 ```typescript
-import {Path, Accept, GET} from 'typescript-rest';
-import {Tags} from 'typescript-rest-swagger';
+import { Path, Accept, GET } from 'typescript-rest';
+import { Tags } from 'typescript-rest-swagger';
 
 @Path('mypath')
 export class MyService {
     @GET
     @Tags('adminMethod', 'otheTag')
     @Accept('text/html')
-    test( ): string {
+    test(): string {
         return 'OK';
     }
 
     @GET
     @Path('secondpath')
-    test2( @QueryParam('testParam')test?: string ): Person {
-        return {name: 'OK'};
+    test2(@QueryParam('testParam') test?: string): Person {
+        return { name: 'OK' };
     }
 }
 ```
@@ -102,8 +103,8 @@ export class MyService {
      */
     @GET
     @Path('secondpath')
-    test2( @QueryParam('testParam')test?: string ): Person {
-        return {name: 'OK'};
+    test2(@QueryParam('testParam') test?: string): Person {
+        return { name: 'OK' };
     }
 }
 ```
@@ -116,17 +117,19 @@ A decorator to document the responses that a given service method can return. It
 
 ```typescript
 interface MyError {
-   message: string
+    message: string;
 }
 
 @Path('people')
 class PeopleService {
-  @Response<string>(200, 'Retrieve a list of people.')
-  @Response<MyError>(401, 'The user is unauthorized.', {message: 'The user is not authorized to access this operation.'})
-  @GET
-  getPeople(@Param('name') name: string) {
-     // ...
-  }
+    @Response<string>(200, 'Retrieve a list of people.')
+    @Response<MyError>(401, 'The user is unauthorized.', {
+        message: 'The user is not authorized to access this operation.'
+    })
+    @GET
+    getPeople(@Param('name') name: string) {
+        // ...
+    }
 }
 ```
 
@@ -140,13 +143,15 @@ Used to provide an example of method return to be added into the method response
 ```typescript
 @Path('people')
 class PeopleService {
-  @Example<Array<Person>>([{
-    name: 'Joe'
-  }])
-  @GET
-  getPeople(@Param('name') name: string): Person[] {
-     // ...
-  }
+    @Example<Array<Person>>([
+        {
+            name: 'Joe'
+        }
+    ])
+    @GET
+    getPeople(@Param('name') name: string): Person[] {
+        // ...
+    }
 }
 ```
 
@@ -157,16 +162,15 @@ Add tags for a given method on generated swagger documentation.
 ```typescript
 @Path('people')
 class PeopleService {
-  @Tags('adiministrative', 'department1')
-  @GET
-  getPeople(@Param('name') name: string) {
-     // ...
-  }
+    @Tags('adiministrative', 'department1')
+    @GET
+    getPeople(@Param('name') name: string) {
+        // ...
+    }
 }
 ```
 
-
-#### @Consumes 
+#### @Consumes
 
 Document the consumes property in generated swagger docs
 
@@ -174,14 +178,14 @@ Document the consumes property in generated swagger docs
 @Path('people')
 @Consumes('text/html')
 class PeopleService {
-  @PUT
-  createPeople(@Param('name') name: string, people: People) {
-     // ...
-  }
+    @PUT
+    createPeople(@Param('name') name: string, people: People) {
+        // ...
+    }
 }
 ```
 
-#### @Produces 
+#### @Produces
 
 Document the produces property in generated swagger docs
 
@@ -189,17 +193,17 @@ Document the produces property in generated swagger docs
 @Path('people')
 @Produces('text/html')
 class PeopleService {
-  @GET
-  getPeople(@Param('name') name: string) {
-     // ...
-  }
+    @GET
+    getPeople(@Param('name') name: string) {
+        // ...
+    }
 }
 ```
 
-A Default produces is already created in swagger documentation from the method return analisys. 
+A Default produces is already created in swagger documentation from the method return analisys.
 You can use this decorator to override this default produces.
 
-#### @Hidden 
+#### @Hidden
 
 Allow to hide some APIs from swagger docs (ex: test or dev APIs, etc ...).
 This decorator can be applied for the whole class or only a single method
@@ -208,10 +212,10 @@ This decorator can be applied for the whole class or only a single method
 @Path('people')
 @Hidden()
 class PeopleService {
-  @GET
-  getPeople(@Param('name') name: string) {
-     // ...
-  }
+    @GET
+    getPeople(@Param('name') name: string) {
+        // ...
+    }
 }
 ```
 
@@ -247,32 +251,31 @@ interface Person {
 }
 ```
 
+### SwaggerConfig.json
 
-### SwaggerConfig.json 
+The swagger config file supports the following properties:
 
-The swagger config file supports the following properties: 
-
-Property | Type | Description
--------- | ---- | -----------
-basePath | string | Base API path; e.g. the 'v1' in https://myapi.com/v1
-consumes | [string] | Default consumes property for the entire API
-description | string | API description; defaults to npm package description
-entryFile | string or string[] | The entry point to your API (it is possible to use glob patters)
-outputFormat | 'Swagger_2' or 'OpenApi_3' | Inform if the generated spec will be in swagger 2.0 format or i open api 3.0
-host | string | The hostname to be informed in the generated swagger file
-license | string | API license number; defaults to npm package license
-name | string | API name; defaults to npm package name
-outputDirectory | string | Where to write the generated swagger file
-produces | [string] | Default produces property for the entire API
-version | string | API version number; defaults to npm package version
-yaml | boolean | Generates the output also as an yaml file 
-spec | any | Extend generated swagger spec with this object. Note that generated properties will always take precedence over what get specified here
-securityDefinitions | *SecurityDefinition | Security Definitions Object. A declaration of the security schemes available to be used in the specification. This does not enforce the security schemes on the operations and only serves to provide the relevant details for each scheme.
-collectionFormat | string | Default collectionFormat property for the entire API. Possible values are `csv`, `ssv`, `tsv`, `pipes`, `multi`. If not specified, Swagger defaults to `csv`.
-
+| Property            | Type                       | Description                                                                                                                                                                                                                                 |
+| ------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| basePath            | string                     | Base API path; e.g. the 'v1' in https://myapi.com/v1                                                                                                                                                                                        |
+| consumes            | [string]                   | Default consumes property for the entire API                                                                                                                                                                                                |
+| description         | string                     | API description; defaults to npm package description                                                                                                                                                                                        |
+| entryFile           | string or string[]         | The entry point to your API (it is possible to use glob patters)                                                                                                                                                                            |
+| outputFormat        | 'Swagger_2' or 'OpenApi_3' | Inform if the generated spec will be in swagger 2.0 format or i open api 3.0                                                                                                                                                                |
+| host                | string                     | The hostname to be informed in the generated swagger file                                                                                                                                                                                   |
+| license             | string                     | API license number; defaults to npm package license                                                                                                                                                                                         |
+| name                | string                     | API name; defaults to npm package name                                                                                                                                                                                                      |
+| outputDirectory     | string                     | Where to write the generated swagger file                                                                                                                                                                                                   |
+| produces            | [string]                   | Default produces property for the entire API                                                                                                                                                                                                |
+| version             | string                     | API version number; defaults to npm package version                                                                                                                                                                                         |
+| yaml                | boolean                    | Generates the output also as an yaml file                                                                                                                                                                                                   |
+| spec                | any                        | Extend generated swagger spec with this object. Note that generated properties will always take precedence over what get specified here                                                                                                     |
+| securityDefinitions | \*SecurityDefinition       | Security Definitions Object. A declaration of the security schemes available to be used in the specification. This does not enforce the security schemes on the operations and only serves to provide the relevant details for each scheme. |
+| collectionFormat    | string                     | Default collectionFormat property for the entire API. Possible values are `csv`, `ssv`, `tsv`, `pipes`, `multi`. If not specified, Swagger defaults to `csv`.                                                                               |
 
 Where the SecurityDefinition contract is defined as:
-```typescript 
+
+```typescript
 {
     [name: string]: {
         type: string;
@@ -287,6 +290,7 @@ Where the SecurityDefinition contract is defined as:
 ```
 
 See an example:
+
 ```json
 {
     "swagger": {
@@ -306,9 +310,7 @@ See an example:
                 "in": "query"
             }
         },
-        "ignore": [
-          "**/node_modules/**"
-        ]
+        "ignore": ["**/node_modules/**"]
     }
 }
 ```
@@ -318,21 +320,21 @@ See an example:
 
 ```yaml
 swagger:
-  outputDirectory: ./dist
-  entryFile: 
-    - ./controllers/*.ts
-  outputFormat: openapi_3
-  host: localhost:3000
-  version: 1.0
-  name: Typescript-rest Test API
-  description: A description
-  license: MIT
-  basePath: /v1
-  securityDefinitions:
-    api_key:
-      type: apiKey
-      name: access_token
-      in: query
-  ignore:
-    - /node_modules/**    
+    outputDirectory: ./dist
+    entryFile:
+        - ./controllers/*.ts
+    outputFormat: openapi_3
+    host: localhost:3000
+    version: 1.0
+    name: Typescript-rest Test API
+    description: A description
+    license: MIT
+    basePath: /v1
+    securityDefinitions:
+        api_key:
+            type: apiKey
+            name: access_token
+            in: query
+    ignore:
+        - /node_modules/**
 ```

@@ -3,7 +3,7 @@
     "declaration": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "lib": ["ES2022", "dom"],
+    "lib": ["es2022", "dom"],
     "module": "commonjs",
     "newLine": "LF",
     "noFallthroughCasesInSwitch": true,
