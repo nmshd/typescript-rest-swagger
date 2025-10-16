@@ -13,9 +13,8 @@
     "noUnusedParameters": false,
     "noUnusedLocals": false,
     "sourceMap": true,
-    "strict": false,
+    "strictNullChecks": false,
     "target": "es5"
-
   },
   "include": ["**/*.ts"]
 }
