@@ -1,30 +1,32 @@
-import { Accept, FileParam, FormParam, POST, Path, Security } from "@nmshd/typescript-rest";
+import {
+  PUT,
+  Path,
+  PathParam,
+  QueryParam,
+  Security
+} from "@nmshd/typescript-rest";
+import * as swagger from "../../src";
 
-enum TestNumericEnum {
-  First,
-  Second,
-  Third,
+interface AddUsersToGroupRequest {
+  userIds: string[];
+  nanoChatIds: string[];
+  name?: string;
 }
 
 @Path("secure")
 @Security(["ROLE_1", "ROLE_2"], "access_token")
 export class SecureEndpoint {
-    @POST
-    @Path("/Own")
-    @Accept("application/json")
-    public uploadOwnFile(
-        @FormParam("expiresAt") expiresAt: string,
-        @FormParam("title") title?: string,
-        @FileParam("file") file?: Express.Multer.File,
-        @FormParam("description") description?: string,
-        @FormParam("tags") tags?: string[]
-    ): any {
-        return {};
-    }
 
-  @POST
-  @Security(["**"], "user_email")
-  public post(): string {
-    return "Posted";
+
+  @PUT
+  @Path(":id/users")
+  @swagger.Body<AddUsersToGroupRequest>()
+  public async addUsersToGroup(
+    @PathParam("id") id: string = "123",
+    @QueryParam("id2") id2: string = "123",
+    @QueryParam("notify") notify: boolean = true,
+    body: any
+  ): Promise<any> {
+    return;
   }
 }

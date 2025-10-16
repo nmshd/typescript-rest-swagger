@@ -13,14 +13,12 @@ function getDecorators(node, isMatching) {
     }
     return decorators
         .map((d) => {
-        const result = {
-            arguments: [],
-            typeArguments: [],
-        };
         let x = d.expression;
+        let args = [];
+        let typeArguments = ts.factory.createNodeArray([]);
         if (ts.isCallExpression(x)) {
             if (x.arguments) {
-                result.arguments = x.arguments.map((argument) => {
+                args = x.arguments.map((argument) => {
                     if (ts.isStringLiteral(argument)) {
                         return argument.text;
                     }
@@ -31,14 +29,18 @@ function getDecorators(node, isMatching) {
                         return argument;
                     }
                 });
+                ;
             }
             if (x.typeArguments) {
-                result.typeArguments = x.typeArguments;
+                typeArguments = x.typeArguments;
             }
             x = x.expression;
         }
-        result.text = x.text || x.name.text;
-        return result;
+        return {
+            text: x.text || x.name.text,
+            arguments: args,
+            typeArguments: typeArguments,
+        };
     })
         .filter(isMatching);
 }

@@ -8,7 +8,7 @@ export declare function getDecoratorOptions(node: ts.Node, isMatching: (identifi
 export declare function isDecorator(node: ts.Node, isMatching: (identifier: DecoratorData) => boolean): boolean;
 export interface DecoratorData {
     text: string;
-    arguments: Array<any>;
-    typeArguments: Array<any>;
+    arguments: Array<string | ts.Expression>;
+    typeArguments: ts.NodeArray<ts.TypeNode>;
 }
 //# sourceMappingURL=decoratorUtils.d.ts.map

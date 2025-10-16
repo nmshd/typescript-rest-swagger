@@ -10,15 +10,13 @@ export function getDecorators(
   }
 
   return decorators
-    .map((d) => {
-      const result: any = {
-        arguments: [],
-        typeArguments: [],
-      };
+    .map((d): DecoratorData => {
       let x: any = d.expression;
+      let args : Array<string | ts.Expression> = [];
+      let typeArguments: ts.NodeArray<ts.TypeNode> = ts.factory.createNodeArray([]);
       if (ts.isCallExpression(x)) {
         if (x.arguments) {
-          result.arguments = x.arguments.map((argument) => {
+          args = x.arguments.map((argument) => {
             if (ts.isStringLiteral(argument)) {
               return argument.text;
             } else if (ts.isNumericLiteral(argument)) {
@@ -26,15 +24,18 @@ export function getDecorators(
             } else {
               return argument;
             }
-          });
+          });;
         }
         if (x.typeArguments) {
-          result.typeArguments = x.typeArguments;
+          typeArguments = x.typeArguments;
         }
         x = x.expression;
       }
-      result.text = x.text || x.name.text;
-      return result as DecoratorData;
+      return {
+        text: x.text || x.name.text,
+        arguments: args,
+        typeArguments: typeArguments,
+      };
     })
     .filter(isMatching);
 }
@@ -92,6 +93,6 @@ export function isDecorator(
 
 export interface DecoratorData {
   text: string;
-  arguments: Array<any>;
-  typeArguments: Array<any>;
+  arguments: Array<string | ts.Expression>;
+  typeArguments: ts.NodeArray<ts.TypeNode>;
 }

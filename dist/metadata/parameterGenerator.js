@@ -96,13 +96,16 @@ class ParameterGenerator {
         };
     }
     getBodyParameter(parameter, bodyDecorator) {
+        let type;
         const parameterName = parameter.name.text;
         if (bodyDecorator) {
-            const type = bodyDecorator.typeArguments;
-            //TODO implement Body Type Decorator
-            debugger;
+            const typeArgument = bodyDecorator.typeArguments[0];
+            const nodeAsTsMorphNode = (0, utils_1.getNodeAsTsMorphNode)(typeArgument, this.morph);
+            type = (0, resolveType_1.resolveType)(nodeAsTsMorphNode.getType(), undefined, nodeAsTsMorphNode);
         }
-        const type = this.getValidatedType(parameter);
+        else {
+            type = this.getValidatedType(parameter);
+        }
         if (!this.supportsBodyParameters(this.method)) {
             throw new Error(`Body can't support ${this.method} method`);
         }

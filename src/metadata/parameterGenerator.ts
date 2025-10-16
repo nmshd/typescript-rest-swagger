@@ -133,13 +133,19 @@ export class ParameterGenerator {
     parameter: ts.ParameterDeclaration,
     bodyDecorator?: DecoratorData
   ): Parameter {
+    let type;
     const parameterName = (parameter.name as ts.Identifier).text;
     if (bodyDecorator) {
-      const type = bodyDecorator.typeArguments;
-      //TODO implement Body Type Decorator
-      debugger;
+      const typeArgument = bodyDecorator.typeArguments[0];
+      const nodeAsTsMorphNode = getNodeAsTsMorphNode(typeArgument, this.morph);
+      type = resolveType(
+        nodeAsTsMorphNode.getType(),
+        undefined,
+        nodeAsTsMorphNode
+      );
+    } else {
+      type = this.getValidatedType(parameter);
     }
-    const type = this.getValidatedType(parameter);
 
     if (!this.supportsBodyParameters(this.method)) {
       throw new Error(`Body can't support ${this.method} method`);
