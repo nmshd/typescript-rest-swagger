@@ -38,12 +38,7 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
         }
 
         this.debugger("Generating Metadata for method %s", this.getCurrentLocation());
-        // TODO implement implicit return type
-        // const typeChecker = MetadataGenerator.current.typeChecker;
-        // const signature =
-        //   typeChecker.getSignatureFromDeclaration(this.node);
-        // const returnType = typeChecker.getReturnTypeOfSignature(signature);
-        // const kind = ts.SyntaxKind[this.node.kind];
+
         const identifier = this.node.name as ts.Identifier;
 
         const tsMorphNode = getNodeAsTsMorphNode(this.node, this.morph);
@@ -52,7 +47,7 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
             throw new Error(`Node ${this.getCurrentLocation()} is not a valid MethodDeclaration.`);
         }
 
-        const type = resolveType(tsMorphNode.getReturnType(), undefined, tsMorphNode);
+        const type = resolveType(tsMorphNode.getReturnType(), tsMorphNode);
         const responses = this.mergeResponses(this.getResponses(), this.getMethodSuccessResponse(type));
         const bodyDecorator = getDecorators(this.node, (decorator) => {
             return decorator.text === "Body";

@@ -108,7 +108,7 @@ export class ParameterGenerator {
         if (bodyDecorator) {
             const typeArgument = bodyDecorator.typeArguments[0];
             const nodeAsTsMorphNode = getNodeAsTsMorphNode(typeArgument, this.morph);
-            type = resolveType(nodeAsTsMorphNode.getType(), undefined, nodeAsTsMorphNode);
+            type = resolveType(nodeAsTsMorphNode.getType(), nodeAsTsMorphNode);
         } else {
             type = this.getValidatedType(parameter);
         }
@@ -283,7 +283,7 @@ export class ParameterGenerator {
             );
         }
         const nodeAsTsMorphNode = getNodeAsTsMorphNode(parameter, this.morph);
-        return resolveType(nodeAsTsMorphNode.getType(), undefined, nodeAsTsMorphNode);
+        return resolveType(nodeAsTsMorphNode.getType(), nodeAsTsMorphNode);
     }
 
     private getDefaultValue(initializer?: ts.Expression) {

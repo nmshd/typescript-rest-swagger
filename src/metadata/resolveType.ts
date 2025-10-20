@@ -15,6 +15,7 @@ import {
     UnionType
 } from "./metadataGenerator";
 
+const inProgressTypes: { [typeName: string]: boolean } = {};
 const syntaxKindMap: { [kind: number]: string } = {};
 syntaxKindMap[ts.SyntaxKind.NumberKeyword] = "number";
 syntaxKindMap[ts.SyntaxKind.StringKeyword] = "string";
@@ -22,7 +23,7 @@ syntaxKindMap[ts.SyntaxKind.BooleanKeyword] = "boolean";
 syntaxKindMap[ts.SyntaxKind.VoidKeyword] = "void";
 syntaxKindMap[ts.SyntaxKind.UndefinedKeyword] = "undefined";
 
-export function resolveType(type?: MorphType, parentTypeMap?: Record<string, MorphType>, node?: Node): Type {
+export function resolveType(type?: MorphType, node?: Node): Type {
     if (!type) {
         return { typeName: "void" };
     }
@@ -50,24 +51,11 @@ export function resolveType(type?: MorphType, parentTypeMap?: Record<string, Mor
     }
 
     switch (true) {
-        case typeObject.isTypeParameter:
-            if (!parentTypeMap) {
-                throw new Error(
-                    `Type parameter ${type.getSymbolOrThrow().getName()} is not resolved. Type arguments map is empty.`
-                );
-            }
-            const resolvedType = parentTypeMap[type.getText()];
-            debugger;
-            break;
-        // return resolveType(resolvedType, getTypeArgumentMap(resolvedType));
-
         case typeObject.isTuple:
-            //TODO
-            debugger;
-            break;
+            throw new Error("Tuple types are not supported.");
         case typeObject.isIntersection:
             const intersectionTypes = type.getIntersectionTypes().map((subType) => {
-                return resolveType(subType, typeArgumentsMap);
+                return resolveType(subType);
             });
             const noneObjectTypes = intersectionTypes.filter((t) => {
                 return !isObjectType(t) && t.typeName !== "object";
@@ -122,7 +110,7 @@ export function resolveType(type?: MorphType, parentTypeMap?: Record<string, Mor
             const arrayElementType = type.getArrayElementTypeOrThrow();
             const arrayType: ArrayType = {
                 typeName: "array",
-                elementType: resolveType(arrayElementType, typeArgumentsMap)
+                elementType: resolveType(arrayElementType)
             };
             return arrayType;
 
@@ -138,6 +126,7 @@ export function resolveType(type?: MorphType, parentTypeMap?: Record<string, Mor
             if (!declarationNode) {
                 throw new Error(`Node is required to resolve type for ${type.getText()}`);
             }
+            const originalFilePath = declarationNode.getSourceFile().getFilePath();
 
             let typeName = type.getText(declarationNode, ts.TypeFormatFlags.UseAliasDefinedOutsideCurrentScope);
 
@@ -157,8 +146,23 @@ export function resolveType(type?: MorphType, parentTypeMap?: Record<string, Mor
             typeName = typeName || typeNodeName;
 
             typeName = replaceNameText(typeName);
+
+            if (typeName && inProgressTypes[typeName]) {
+                return createCircularDependencyResolver(typeName);
+            }
+
+            if (typeName) {
+                inProgressTypes[typeName] = true;
+            }
+
             const cachedType = MetadataGenerator.current.getReferenceType(typeName);
-            if (cachedType) {
+            if (typeName && cachedType) {
+                if (originalFilePath !== cachedType.originalFileName) {
+                    throw new Error(
+                        `Type name conflict: ${typeName} is defined in both ${originalFilePath} and ${cachedType.originalFileName}`
+                    );
+                }
+                delete inProgressTypes[typeName];
                 return cachedType;
             }
             const tc = MetadataGenerator.current.morph.getTypeChecker();
@@ -175,7 +179,7 @@ export function resolveType(type?: MorphType, parentTypeMap?: Record<string, Mor
                 return {
                     name: prop.getName(),
                     required: !prop.isOptional(),
-                    type: resolveType(tcType, undefined, propNode),
+                    type: resolveType(tcType, propNode),
                     description
                 };
             });
@@ -191,12 +195,13 @@ export function resolveType(type?: MorphType, parentTypeMap?: Record<string, Mor
 
             const referenceType: ReferenceType = {
                 properties,
-                originalFileName: declarationNode.getSourceFile().getFilePath(),
+                originalFileName: originalFilePath,
                 typeName,
                 simpleTypeName: type.getSymbol()?.getName() ?? "",
                 description: ""
             };
             MetadataGenerator.current.addReferenceType(referenceType);
+            delete inProgressTypes[typeName];
             return referenceType;
 
         case typeObject.isEnum:
@@ -250,7 +255,7 @@ export function resolveType(type?: MorphType, parentTypeMap?: Record<string, Mor
             }
 
             const unionTypes = type.getUnionTypes().map((subType) => {
-                return resolveType(subType, typeArgumentsMap);
+                return resolveType(subType);
             });
 
             // Remove duplicate types from union
@@ -283,8 +288,8 @@ export function resolveType(type?: MorphType, parentTypeMap?: Record<string, Mor
         case typeObject.isEnumLiteral:
         case typeObject.isNumberLiteral:
         case typeObject.isBigIntLiteral:
-            let typeLiteralValue = type.getLiteralValue();
-            if (typeLiteralValue !== undefined) {
+            const typeLiteralValue = type.getLiteralValue();
+            if (typeLiteralValue) {
                 const literalType: ConstType = {
                     typeName: "const",
                     value: typeLiteralValue
@@ -311,7 +316,7 @@ export function resolveType(type?: MorphType, parentTypeMap?: Record<string, Mor
         default:
             const apparentType = type.getApparentType();
             if (apparentType) {
-                return resolveType(apparentType, typeArgumentsMap);
+                return resolveType(apparentType);
             }
             debugger;
     }
@@ -437,6 +442,7 @@ function getTypeObject(type: MorphType) {
 
 function replaceNameText(text = "") {
     return text
+        .replace(/\./g, "_._")
         .replace(/\</g, "-")
         .replace(/\>/g, "-")
         .replace(/\,/g, ".")
@@ -529,4 +535,27 @@ function handleSpecialTypes(type: MorphType, node?: Node): Type | undefined {
     }
 
     return undefined;
+}
+
+function createCircularDependencyResolver(typeName: string) {
+    const referenceType: ReferenceType = {
+        description: "",
+        properties: new Array<Property>(),
+        typeName: typeName,
+        originalFileName: undefined
+    };
+
+    MetadataGenerator.current.onFinish((referenceTypes) => {
+        const realReferenceType = referenceTypes[typeName];
+        if (!realReferenceType) {
+            return;
+        }
+        referenceType.description = realReferenceType.description;
+        referenceType.properties = realReferenceType.properties;
+        referenceType.typeName = realReferenceType.typeName;
+        referenceType.originalFileName = realReferenceType.originalFileName;
+        referenceType.simpleTypeName = realReferenceType.simpleTypeName;
+    });
+
+    return referenceType;
 }

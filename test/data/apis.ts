@@ -69,6 +69,11 @@ enum TestNumericEnum {
     Option2
 }
 
+interface RecursiveType {
+    name: string;
+    children?: Array<RecursiveType>;
+}
+
 @Accept("text/plain")
 @Path("mypath")
 @swagger.Tags("My Services")
@@ -209,9 +214,16 @@ export class MyService {
     public externalType(body: Omit<IRoute<string>, "stack">): any {
         return body;
     }
+
     @POST
     @Path("intersection-type")
     public intersection(body: { a: string } & { b: number }): any {
+        return body;
+    }
+
+    @POST
+    @Path("recursive-type")
+    public recursiveType(body: RecursiveType): any {
         return body;
     }
 }
@@ -277,40 +289,30 @@ export class BasicModel {
 
 export class BasicEndpoint<T extends BasicModel> {
     protected list(@QueryParam("full") full?: boolean): Promise<Array<T>> {
-        return new Promise((resolve, reject) => {
-            // todo
-        });
+        return new Promise((resolve, reject) => {});
     }
 
     @POST
     protected save(entity: T): Promise<Return.NewResource<number>> {
-        return new Promise((resolve, reject) => {
-            // todo
-        });
+        return new Promise((resolve, reject) => {});
     }
 
     @PUT
     @Path("/:id")
     protected update(@PathParam("id") id: number, entity: T): Promise<void> {
-        return new Promise((resolve, reject) => {
-            // todo
-        });
+        return new Promise((resolve, reject) => {});
     }
 
     @DELETE
     @Path("/:id")
     protected remove(@PathParam("id") id: string): Promise<void> {
-        return new Promise((resolve, reject) => {
-            // todo
-        });
+        return new Promise((resolve, reject) => {});
     }
 
     @GET
     @Path("/:id")
     protected get(@PathParam("id") id: string): Promise<T> {
-        return new Promise((resolve, reject) => {
-            // todo
-        });
+        return new Promise((resolve, reject) => {});
     }
 }
 

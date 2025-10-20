@@ -552,4 +552,18 @@ describe("Definition generation", () => {
             expect(typeSpec.properties.b.type).toEqual("number");
         });
     });
+
+    describe("Recursive types", () => {
+        test("recursive types should reference themselves", async () => {
+            let expression = jsonata(
+                'paths."/mypath/recursive-type".post.requestBody.content."application/json".schema'
+            );
+            let typeSpec = await expression.evaluate(spec);
+            expect(typeSpec.$ref).toEqual("#/components/schemas/RecursiveType");
+
+            expression = jsonata("components.schemas.RecursiveType.properties.children.items");
+            let propSpec = await expression.evaluate(spec);
+            expect(propSpec.$ref).toEqual("#/components/schemas/RecursiveType");
+        });
+    });
 });
