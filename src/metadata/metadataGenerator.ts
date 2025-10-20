@@ -209,7 +209,7 @@ export interface ConstType extends Type {
 
 export interface EnumerateType extends Type {
     typeName: 'enum';
-    enumMembers: Array<string | number>;
+    enumMembers: Array<string | number | ts.PseudoBigInt | undefined>;
 }
 
 export interface UnionType extends Type {

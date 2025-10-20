@@ -188,6 +188,19 @@ export class MyService {
     public testFormParam(@FormParam('id') id: string): string {
         return id;
     }
+
+    @POST
+    @Path('dedicated-body')
+    @swagger.Body<MyDatatype>()
+    public testDedicatedBody(body: any): any {
+        return body;
+    }
+
+    @POST
+    @Path('literal-values')
+    public testLiteralValues(body: any): MyLiteralDatatype {
+        return body;
+    }
 }
 
 class BaseService {
@@ -290,6 +303,18 @@ export class BasicEndpoint<T extends BasicModel> {
 
 export interface MyDatatype extends BasicModel {
     property1: string;
+}
+
+export class MyLiteralDatatype {
+    propertyA: 'value1' | 'value2';
+    propertyB: 1 | 2;
+    propertyC: true;
+    propertyD: false;
+    propertyE: 'fixedString';
+    propertyF: 42;
+    propertyG: {
+        subProperty: 'subValue1';
+    };
 }
 
 @Path('generics1')

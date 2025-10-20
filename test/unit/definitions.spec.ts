@@ -479,4 +479,50 @@ describe('Definition generation', () => {
             expect(res).toEqual('#/components/schemas/GenericA-Deep-EndArray.Error-.Error-');
         });
     });
+
+    describe('Body decorator', () => {
+        test('should support @Body decorator', async () => {
+            let expression = jsonata(
+                'paths."/mypath/dedicated-body".post.requestBody.content."application/json".schema'
+            );
+            let reqBodySpec = await expression.evaluate(spec);
+            expect(reqBodySpec).toEqual({
+                $ref: '#/components/schemas/MyDatatype'
+            });
+        });
+    });
+
+    describe('Literal types', () => {
+        test('should support literal types in definitions', async () => {
+            let expression = jsonata('components.schemas.MyLiteralDatatype.properties.propertyA');
+            let propSpec = await expression.evaluate(spec);
+            expect(propSpec.type).toEqual('string');
+            expect(propSpec.enum).toEqual(['value1', 'value2']);
+
+            expression = jsonata('components.schemas.MyLiteralDatatype.properties.propertyB');
+            propSpec = await expression.evaluate(spec);
+            expect(propSpec.type).toEqual('number');
+            expect(propSpec.enum).toEqual([1, 2]);
+
+            expression = jsonata('components.schemas.MyLiteralDatatype.properties.propertyC');
+            propSpec = await expression.evaluate(spec);
+            expect(propSpec.const).toEqual(true);
+
+            expression = jsonata('components.schemas.MyLiteralDatatype.properties.propertyD');
+            propSpec = await expression.evaluate(spec);
+            expect(propSpec.const).toEqual(false);
+
+            expression = jsonata('components.schemas.MyLiteralDatatype.properties.propertyE');
+            propSpec = await expression.evaluate(spec);
+            expect(propSpec.const).toEqual('fixedString');
+
+            expression = jsonata('components.schemas.MyLiteralDatatype.properties.propertyF');
+            propSpec = await expression.evaluate(spec);
+            expect(propSpec.const).toEqual(42);
+
+            expression = jsonata('components.schemas.MyLiteralDatatype.properties.propertyG.properties.subProperty');
+            propSpec = await expression.evaluate(spec);
+            expect(propSpec.const).toEqual('subValue1');
+        });
+    });
 });

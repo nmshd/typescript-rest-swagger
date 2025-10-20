@@ -8,3 +8,5 @@ npm-debug.log*
 .idea
 reports
 dist
+test/data/apidebug.ts
+test/local.ts
