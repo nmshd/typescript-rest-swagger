@@ -248,15 +248,31 @@ export function resolveType(type?: MorphType, parentTypeMap?: Record<string, Mor
 
             return unionType;
         case typeObject.isBooleanLiteral:
+            if (type.getText() !== "true" && type.getText() !== "false") {
+                throw new Error(`Unexpected boolean literal value: ${type.getText()}`);
+            }
+            const literalBooleanType: ConstType = {
+                typeName: "const",
+                value: type.getText() === "true" ? true : false
+            };
+            return literalBooleanType;
         case typeObject.isTemplateLiteral:
         case typeObject.isStringLiteral:
         case typeObject.isEnumLiteral:
         case typeObject.isNumberLiteral:
         case typeObject.isBigIntLiteral:
+            let typeLiteralValue = type.getLiteralValue();
+            if (typeLiteralValue !== undefined) {
+                const literalType: ConstType = {
+                    typeName: "const",
+                    value: typeLiteralValue
+                };
+                return literalType;
+            }
             if (!node) {
                 throw new Error(`Node is required to resolve literal type for ${type.getText()}`);
             }
-            if (!Node.isExpression(node) && !Node.isPropertySignature(node)) {
+            if (!Node.isExpression(node) && !Node.isPropertySignature(node) && !Node.isPropertyDeclaration(node)) {
                 throw new Error(
                     `Node of type ${node.getKindName()} is not supported to resolve literal type for ${type.getText()}`
                 );
@@ -309,7 +325,10 @@ export function getCommonPrimitiveAndArrayUnionType(type: MorphType): Type | nul
     return null;
 }
 
-export function getLiteralValue(expression: ts.Expression | ts.PropertySignature, morph: Project): any {
+export function getLiteralValue(
+    expression: ts.Expression | ts.PropertySignature | ts.PropertyDeclaration,
+    morph: Project
+) {
     const morphNode = getNodeAsTsMorphNode(expression, morph);
     const type = morphNode.getType();
     const literalValue = type.getLiteralValue();
