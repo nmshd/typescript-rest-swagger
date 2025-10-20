@@ -6,6 +6,7 @@ import {
     ArrayType,
     ConstType,
     EnumerateType,
+    isObjectType,
     MetadataGenerator,
     ObjectType,
     Property,
@@ -65,9 +66,30 @@ export function resolveType(type?: MorphType, parentTypeMap?: Record<string, Mor
             debugger;
             break;
         case typeObject.isIntersection:
-            //TODO
-            debugger;
-            break;
+            const intersectionTypes = type.getIntersectionTypes().map((subType) => {
+                return resolveType(subType, typeArgumentsMap);
+            });
+            const noneObjectTypes = intersectionTypes.filter((t) => {
+                return !isObjectType(t) && t.typeName !== "object";
+            });
+            if (noneObjectTypes.length > 0) {
+                throw new Error(
+                    `Intersection types other than object types are not supported. Found: ${intersectionTypes
+                        .map((t) => t.typeName || "object")
+                        .join(", ")}`
+                );
+            }
+            const mergedProperties: Property[] = [];
+            intersectionTypes.forEach((type) => {
+                if (isObjectType(type)) {
+                    mergedProperties.push(...(type as ObjectType).properties);
+                }
+            });
+            const intersectionType: ObjectType = {
+                typeName: "",
+                properties: mergedProperties
+            };
+            return intersectionType;
 
         case typeObject.isAny:
         case typeObject.isUnknown:

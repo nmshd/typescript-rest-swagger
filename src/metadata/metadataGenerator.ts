@@ -233,6 +233,10 @@ export interface ObjectType extends Type {
     properties: Array<Property>;
 }
 
+export const isObjectType = (type: Type): type is ObjectType => {
+    return (type as ObjectType).properties !== undefined;
+};
+
 export interface ArrayType extends Type {
     elementType: Type;
 }

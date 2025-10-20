@@ -209,6 +209,11 @@ export class MyService {
     public externalType(body: Omit<IRoute<string>, "stack">): any {
         return body;
     }
+    @POST
+    @Path("intersection-type")
+    public intersection(body: { a: string } & { b: number }): any {
+        return body;
+    }
 }
 
 class BaseService {

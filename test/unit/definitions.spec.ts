@@ -536,4 +536,20 @@ describe("Definition generation", () => {
             expect(reqBodyRef).toEqual("#/components/schemas/Omit-IRoute-string-.stack-");
         });
     });
+
+    describe("Intersection types", () => {
+        test("intersection types should resolve in an object with merged properties", async () => {
+            let expression = jsonata(
+                'paths."/mypath/intersection-type".post.requestBody.content."application/json".schema'
+            );
+            let typeSpec = await expression.evaluate(spec);
+
+            expect(typeSpec.type).toEqual("object");
+            expect(typeSpec.properties).toBeDefined();
+            expect(typeSpec.properties.a).toBeDefined();
+            expect(typeSpec.properties.b).toBeDefined();
+            expect(typeSpec.properties.a.type).toEqual("string");
+            expect(typeSpec.properties.b.type).toEqual("number");
+        });
+    });
 });
