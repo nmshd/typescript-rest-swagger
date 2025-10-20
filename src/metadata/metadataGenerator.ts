@@ -1,12 +1,12 @@
-import * as debug from 'debug';
-import { glob } from 'glob';
-import { match } from 'minimatch';
-import { relative } from 'path';
-import { Project } from 'ts-morph';
-import * as ts from 'typescript';
-import { isDecorator } from '../utils/decoratorUtils';
-import { ControllerGenerator } from './controllerGenerator';
-import _ = require('lodash');
+import * as debug from "debug";
+import { glob } from "glob";
+import { match } from "minimatch";
+import { relative } from "path";
+import { Project } from "ts-morph";
+import * as ts from "typescript";
+import { isDecorator } from "../utils/decoratorUtils";
+import { ControllerGenerator } from "./controllerGenerator";
+import _ = require("lodash");
 
 export class MetadataGenerator {
     public static current: MetadataGenerator;
@@ -17,7 +17,7 @@ export class MetadataGenerator {
         [typeName: string]: ReferenceType;
     } = {};
     private circularDependencyResolvers = new Array<(referenceTypes: { [typeName: string]: ReferenceType }) => void>();
-    private debugger = debug('typescript-rest-swagger:metadata');
+    private debugger = debug("typescript-rest-swagger:metadata");
     public morph: Project;
     private targetFiles: string[];
 
@@ -27,9 +27,9 @@ export class MetadataGenerator {
         private readonly ignorePaths?: Array<string>
     ) {
         this.targetFiles = this.getSourceFiles(entryFile);
-        this.debugger('Starting Metadata Generator');
-        this.debugger('Entry File: %j ', entryFile);
-        this.debugger('Ts Config Path: %j ', tsConfigFilePath);
+        this.debugger("Starting Metadata Generator");
+        this.debugger("Entry File: %j ", entryFile);
+        this.debugger("Ts Config Path: %j ", tsConfigFilePath);
         this.morph = new Project({
             compilerOptions: {
                 //Enforce strict null check to be disabled as this ensures optional types are handled correctly
@@ -52,7 +52,7 @@ export class MetadataGenerator {
                     }
                 }
             }
-            if (sf.fileName.includes('node_modules')) return;
+            if (sf.fileName.includes("node_modules")) return;
 
             let matchTargetFile = this.targetFiles.some((targetFile) => {
                 return relative(process.cwd(), sf.fileName).includes(targetFile);
@@ -69,10 +69,10 @@ export class MetadataGenerator {
             ts.forEachChild(sf, addNodes);
         });
 
-        this.debugger('Building Metadata for controllers Generator');
+        this.debugger("Building Metadata for controllers Generator");
         const controllers = this.buildControllers();
 
-        this.debugger('Handling circular references');
+        this.debugger("Handling circular references");
         this.circularDependencyResolvers.forEach((c) => c(this.referenceTypes));
 
         return {
@@ -105,13 +105,13 @@ export class MetadataGenerator {
     }
 
     private getSourceFiles(sourceFiles: string | Array<string>) {
-        this.debugger('Getting source files from expressions');
-        this.debugger('Source file patterns: %j ', sourceFiles);
+        this.debugger("Getting source files from expressions");
+        this.debugger("Source file patterns: %j ", sourceFiles);
         const sourceFilesExpressions = _.castArray(sourceFiles);
         const result: Set<string> = new Set<string>();
         const options = { cwd: process.cwd() };
         sourceFilesExpressions.forEach((pattern) => {
-            this.debugger('Searching pattern: %s with options: %j', pattern, options);
+            this.debugger("Searching pattern: %s with options: %j", pattern, options);
             const matches = glob.sync(pattern, options);
             matches.forEach((file) => result.add(file));
         });
@@ -121,7 +121,7 @@ export class MetadataGenerator {
     private buildControllers() {
         return this.nodes
             .filter((node) => node.kind === ts.SyntaxKind.ClassDeclaration)
-            .filter((node) => !isDecorator(node, (decorator) => 'Hidden' === decorator.text))
+            .filter((node) => !isDecorator(node, (decorator) => "Hidden" === decorator.text))
             .map((classDeclaration: ts.ClassDeclaration) => new ControllerGenerator(classDeclaration, this.morph))
             .filter((generator) => generator.isValid())
             .map((generator) => generator.generate());
@@ -182,33 +182,33 @@ export interface Security {
 
 export interface Type {
     typeName:
-        | 'array'
-        | 'object'
-        | 'void'
-        | 'string'
-        | 'double'
-        | 'boolean'
-        | 'buffer'
-        | 'integer'
-        | 'long'
-        | 'float'
-        | 'date'
-        | 'datetime'
-        | 'enum'
-        | 'undefined'
-        | 'const'
+        | "array"
+        | "object"
+        | "void"
+        | "string"
+        | "double"
+        | "boolean"
+        | "buffer"
+        | "integer"
+        | "long"
+        | "float"
+        | "date"
+        | "datetime"
+        | "enum"
+        | "undefined"
+        | "const"
         | string;
     simpleTypeName?: string;
     typeArgument?: Type;
 }
 
 export interface ConstType extends Type {
-    typeName: 'const';
+    typeName: "const";
     value: string | number | boolean | object;
 }
 
 export interface EnumerateType extends Type {
-    typeName: 'enum';
+    typeName: "enum";
     enumMembers: Array<string | number | ts.PseudoBigInt | undefined>;
 }
 

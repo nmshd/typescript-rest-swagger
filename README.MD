@@ -9,18 +9,18 @@ This is a tool to generate swagger files from a [typescript-rest](https://github
 
 **Table of Contents**
 
--   [Swagger for Typescript-rest](#swagger-for-typescript-rest)
-    -   [Installation](#installation)
-    -   [Usage](#usage)
-        -   [Swagger Decorators](#swagger-decorators)
-            -   [@Response](#response)
-            -   [@Example](#example)
-            -   [@Tags](#tags)
-            -   [@Consumes](#consumes)
-            -   [@Produces](#produces)
-            -   [@Hidden](#hidden)
-            -   [@IsInt, @IsLong, @IsFloat, @IsDouble](#isint-islong-isfloat-isdouble)
-        -   [SwaggerConfig.json](#swaggerconfigjson)
+- [Swagger for Typescript-rest](#swagger-for-typescript-rest)
+    - [Installation](#installation)
+    - [Usage](#usage)
+        - [Swagger Decorators](#swagger-decorators)
+            - [@Response](#response)
+            - [@Example](#example)
+            - [@Tags](#tags)
+            - [@Consumes](#consumes)
+            - [@Produces](#produces)
+            - [@Hidden](#hidden)
+            - [@IsInt, @IsLong, @IsFloat, @IsDouble](#isint-islong-isfloat-isdouble)
+        - [SwaggerConfig.json](#swaggerconfigjson)
 
 ## Installation
 
@@ -71,22 +71,22 @@ However, there are some additional informations that can be provided, only with 
 Some examples:
 
 ```typescript
-import { Path, Accept, GET } from 'typescript-rest';
-import { Tags } from 'typescript-rest-swagger';
+import { Path, Accept, GET } from "typescript-rest";
+import { Tags } from "typescript-rest-swagger";
 
-@Path('mypath')
+@Path("mypath")
 export class MyService {
     @GET
-    @Tags('adminMethod', 'otheTag')
-    @Accept('text/html')
+    @Tags("adminMethod", "otheTag")
+    @Accept("text/html")
     test(): string {
-        return 'OK';
+        return "OK";
     }
 
     @GET
-    @Path('secondpath')
-    test2(@QueryParam('testParam') test?: string): Person {
-        return { name: 'OK' };
+    @Path("secondpath")
+    test2(@QueryParam("testParam") test?: string): Person {
+        return { name: "OK" };
     }
 }
 ```
@@ -94,17 +94,17 @@ export class MyService {
 It is also important to observe that all JsDoc provided on your methods, classes, and parameters is outputed into the generated swagger file:
 
 ```typescript
-@Accept('text/plain')
-@Path('mypath')
+@Accept("text/plain")
+@Path("mypath")
 export class MyService {
     /**
      * This description will be used to describe the get operation of path '/mypath' on the generated swagger
      * @param test And this will describe the parameter test of this same operation
      */
     @GET
-    @Path('secondpath')
-    test2(@QueryParam('testParam') test?: string): Person {
-        return { name: 'OK' };
+    @Path("secondpath")
+    test2(@QueryParam("testParam") test?: string): Person {
+        return { name: "OK" };
     }
 }
 ```
@@ -120,14 +120,14 @@ interface MyError {
     message: string;
 }
 
-@Path('people')
+@Path("people")
 class PeopleService {
-    @Response<string>(200, 'Retrieve a list of people.')
-    @Response<MyError>(401, 'The user is unauthorized.', {
-        message: 'The user is not authorized to access this operation.'
+    @Response<string>(200, "Retrieve a list of people.")
+    @Response<MyError>(401, "The user is unauthorized.", {
+        message: "The user is not authorized to access this operation."
     })
     @GET
-    getPeople(@Param('name') name: string) {
+    getPeople(@Param("name") name: string) {
         // ...
     }
 }
@@ -141,15 +141,15 @@ through this decorator is an additional response created.
 Used to provide an example of method return to be added into the method response section of the generated documentation for this method.
 
 ```typescript
-@Path('people')
+@Path("people")
 class PeopleService {
     @Example<Array<Person>>([
         {
-            name: 'Joe'
+            name: "Joe"
         }
     ])
     @GET
-    getPeople(@Param('name') name: string): Person[] {
+    getPeople(@Param("name") name: string): Person[] {
         // ...
     }
 }
@@ -160,11 +160,11 @@ class PeopleService {
 Add tags for a given method on generated swagger documentation.
 
 ```typescript
-@Path('people')
+@Path("people")
 class PeopleService {
-    @Tags('adiministrative', 'department1')
+    @Tags("adiministrative", "department1")
     @GET
-    getPeople(@Param('name') name: string) {
+    getPeople(@Param("name") name: string) {
         // ...
     }
 }
@@ -175,11 +175,11 @@ class PeopleService {
 Document the consumes property in generated swagger docs
 
 ```typescript
-@Path('people')
-@Consumes('text/html')
+@Path("people")
+@Consumes("text/html")
 class PeopleService {
     @PUT
-    createPeople(@Param('name') name: string, people: People) {
+    createPeople(@Param("name") name: string, people: People) {
         // ...
     }
 }
@@ -190,11 +190,11 @@ class PeopleService {
 Document the produces property in generated swagger docs
 
 ```typescript
-@Path('people')
-@Produces('text/html')
+@Path("people")
+@Produces("text/html")
 class PeopleService {
     @GET
-    getPeople(@Param('name') name: string) {
+    getPeople(@Param("name") name: string) {
         // ...
     }
 }
@@ -209,11 +209,11 @@ Allow to hide some APIs from swagger docs (ex: test or dev APIs, etc ...).
 This decorator can be applied for the whole class or only a single method
 
 ```typescript
-@Path('people')
+@Path("people")
 @Hidden()
 class PeopleService {
     @GET
-    getPeople(@Param('name') name: string) {
+    getPeople(@Param("name") name: string) {
         // ...
     }
 }
@@ -229,11 +229,11 @@ class Person {
     @IsInt id: number;
 }
 
-@Path('people')
+@Path("people")
 class PeopleService {
-    @Path(':id')
+    @Path(":id")
     @GET
-    getById(@PathParam('id') @IsLong id: number) {
+    getById(@PathParam("id") @IsLong id: number) {
         // ...
     }
 }

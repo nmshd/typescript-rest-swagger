@@ -1,13 +1,13 @@
-'use strict';
+"use strict";
 
-import * as debug from 'debug';
-import * as _ from 'lodash';
-import { ClassDeclaration, MethodDeclaration, Node, Project } from 'ts-morph';
-import * as ts from 'typescript';
-import { getDecorators } from '../utils/decoratorUtils';
-import { getNodeAsTsMorphNode } from '../utils/utils';
-import { ResponseType, Type } from './metadataGenerator';
-import { resolveType } from './resolveType';
+import * as debug from "debug";
+import * as _ from "lodash";
+import { ClassDeclaration, MethodDeclaration, Node, Project } from "ts-morph";
+import * as ts from "typescript";
+import { getDecorators } from "../utils/decoratorUtils";
+import { getNodeAsTsMorphNode } from "../utils/utils";
+import { ResponseType, Type } from "./metadataGenerator";
+import { resolveType } from "./resolveType";
 
 export abstract class EndpointGenerator<T extends ts.Node> {
     protected node: T;
@@ -35,18 +35,18 @@ export abstract class EndpointGenerator<T extends ts.Node> {
             const d = decorators[0];
             result = d.arguments;
         }
-        this.debugger('Arguments of decorator %s: %j', decoratorName, result);
+        this.debugger("Arguments of decorator %s: %j", decoratorName, result);
         return result;
     }
 
     protected getSecurity() {
-        const securities = this.getDecoratorValues('Security', true);
+        const securities = this.getDecoratorValues("Security", true);
         if (!securities || !securities.length) {
             return undefined;
         }
 
         return securities.map((security) => ({
-            name: security[1] ? security[1] : 'default',
+            name: security[1] ? security[1] : "default",
             scopes: security[0] ? _.castArray(this.handleRolesArray(security[0])) : []
         }));
     }
@@ -71,7 +71,7 @@ export abstract class EndpointGenerator<T extends ts.Node> {
         } else {
             example = this.getInitializerValue(argument);
         }
-        this.debugger('Example extracted for %s: %j', this.getCurrentLocation(), example);
+        this.debugger("Example extracted for %s: %j", this.getCurrentLocation(), example);
         return example;
     }
 
@@ -112,20 +112,20 @@ export abstract class EndpointGenerator<T extends ts.Node> {
             );
         }
 
-        const decorators = getDecorators(this.node, (decorator) => decorator.text === 'Response');
+        const decorators = getDecorators(this.node, (decorator) => decorator.text === "Response");
         if (!decorators || !decorators.length) {
             return [];
         }
-        this.debugger('Generating Responses for %s', this.getCurrentLocation());
+        this.debugger("Generating Responses for %s", this.getCurrentLocation());
 
         return tsMorphNode
             .getDecorators()
             .filter((decorator) => {
-                return decorator.getName() === 'Response';
+                return decorator.getName() === "Response";
             })
             .map((decorator) => {
-                let description = '';
-                let status = '200';
+                let description = "";
+                let status = "200";
                 let examples;
                 const args = decorator.getArguments();
                 if (args[0]) {
@@ -150,7 +150,7 @@ export abstract class EndpointGenerator<T extends ts.Node> {
                     schema: schema,
                     status: status
                 };
-                this.debugger('Generated Responses for %s: %j', this.getCurrentLocation(), responses);
+                this.debugger("Generated Responses for %s: %j", this.getCurrentLocation(), responses);
 
                 return responses;
             });

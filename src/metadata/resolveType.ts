@@ -1,7 +1,7 @@
-import { EnumDeclaration, Expression, Type as MorphType, Node, Project } from 'ts-morph';
-import * as ts from 'typescript';
-import { getJSDocDescriptionFromProperty } from '../utils/jsDocUtils';
-import { getNodeAsTsMorphNode } from '../utils/utils';
+import { EnumDeclaration, Expression, Type as MorphType, Node, Project } from "ts-morph";
+import * as ts from "typescript";
+import { getJSDocDescriptionFromProperty } from "../utils/jsDocUtils";
+import { getNodeAsTsMorphNode } from "../utils/utils";
 import {
     ArrayType,
     ConstType,
@@ -12,24 +12,24 @@ import {
     ReferenceType,
     Type,
     UnionType
-} from './metadataGenerator';
+} from "./metadataGenerator";
 
 const syntaxKindMap: { [kind: number]: string } = {};
-syntaxKindMap[ts.SyntaxKind.NumberKeyword] = 'number';
-syntaxKindMap[ts.SyntaxKind.StringKeyword] = 'string';
-syntaxKindMap[ts.SyntaxKind.BooleanKeyword] = 'boolean';
-syntaxKindMap[ts.SyntaxKind.VoidKeyword] = 'void';
-syntaxKindMap[ts.SyntaxKind.UndefinedKeyword] = 'undefined';
+syntaxKindMap[ts.SyntaxKind.NumberKeyword] = "number";
+syntaxKindMap[ts.SyntaxKind.StringKeyword] = "string";
+syntaxKindMap[ts.SyntaxKind.BooleanKeyword] = "boolean";
+syntaxKindMap[ts.SyntaxKind.VoidKeyword] = "void";
+syntaxKindMap[ts.SyntaxKind.UndefinedKeyword] = "undefined";
 
 export function resolveType(type?: MorphType, parentTypeMap?: Record<string, MorphType>, node?: Node): Type {
     if (!type) {
-        return { typeName: 'void' };
+        return { typeName: "void" };
     }
-    let resultType: Type = { typeName: 'void' };
+    let resultType: Type = { typeName: "void" };
     const typeObject = getTypeObject(type);
 
     const debug = Object.getOwnPropertyNames(MorphType.prototype).reduce((prev, curr: keyof MorphType) => {
-        if (type[curr] && typeof type[curr] === 'function' && curr.includes('get')) {
+        if (type[curr] && typeof type[curr] === "function" && curr.includes("get")) {
             try {
                 // @ts-expect-error
                 prev[curr] = type[curr]();
@@ -71,42 +71,42 @@ export function resolveType(type?: MorphType, parentTypeMap?: Record<string, Mor
 
         case typeObject.isAny:
         case typeObject.isUnknown:
-            resultType = { typeName: 'object' };
+            resultType = { typeName: "object" };
             break;
 
         case typeObject.isNever:
         case typeObject.isNull:
         case typeObject.isVoid:
-            resultType = { typeName: 'void' };
+            resultType = { typeName: "void" };
             break;
         case typeObject.isUndefined:
-            resultType = { typeName: 'undefined' };
+            resultType = { typeName: "undefined" };
             break;
         case typeObject.isBoolean:
-            resultType = { typeName: 'boolean' };
+            resultType = { typeName: "boolean" };
             break;
         case typeObject.isString:
-            resultType = { typeName: 'string' };
+            resultType = { typeName: "string" };
             break;
         case typeObject.isNumber:
-            resultType = { typeName: 'double' };
+            resultType = { typeName: "double" };
             break;
         case typeObject.isBigInt:
-            resultType = { typeName: 'long' };
+            resultType = { typeName: "long" };
             break;
 
         case typeObject.isArray:
         case typeObject.isReadonlyArray:
             const arrayElementType = type.getArrayElementTypeOrThrow();
             const arrayType: ArrayType = {
-                typeName: 'array',
+                typeName: "array",
                 elementType: resolveType(arrayElementType, typeArgumentsMap)
             };
             return arrayType;
 
         // Wanted fall through to handle object types
         case typeObject.isObject && type.getProperties().length === 0:
-            return { typeName: 'object' };
+            return { typeName: "object" };
         case typeObject.isInterface:
         case typeObject.isClass:
         case typeObject.isClassOrInterface:
@@ -120,15 +120,15 @@ export function resolveType(type?: MorphType, parentTypeMap?: Record<string, Mor
             let typeName = type.getText(declarationNode);
 
             // sometimes the type text is the pure definition {prop:string} those need to be filtered out
-            if (typeName.trim().startsWith('{')) {
-                typeName = '';
+            if (typeName.trim().startsWith("{")) {
+                typeName = "";
             }
-            let typeNodeName = '';
+            let typeNodeName = "";
 
             if (Node.isTyped(node)) {
-                typeNodeName = node.getTypeNode()?.getText() ?? '';
-                if (typeNodeName.trim().startsWith('{')) {
-                    typeNodeName = '';
+                typeNodeName = node.getTypeNode()?.getText() ?? "";
+                if (typeNodeName.trim().startsWith("{")) {
+                    typeNodeName = "";
                 }
             }
 
@@ -160,7 +160,7 @@ export function resolveType(type?: MorphType, parentTypeMap?: Record<string, Mor
 
             if (!typeName) {
                 const objectType: ObjectType = {
-                    typeName: '',
+                    typeName: "",
                     properties
                 };
 
@@ -171,8 +171,8 @@ export function resolveType(type?: MorphType, parentTypeMap?: Record<string, Mor
                 properties,
                 originalFileName: declarationNode.getSourceFile().getFilePath(),
                 typeName,
-                simpleTypeName: type.getSymbol()?.getName() ?? '',
-                description: ''
+                simpleTypeName: type.getSymbol()?.getName() ?? "",
+                description: ""
             };
             MetadataGenerator.current.addReferenceType(referenceType);
             return referenceType;
@@ -205,7 +205,7 @@ export function resolveType(type?: MorphType, parentTypeMap?: Record<string, Mor
             }
 
             const enumType: EnumerateType = {
-                typeName: 'enum',
+                typeName: "enum",
                 enumMembers: enumMembers.filter((m) => m !== undefined)
             };
             return enumType;
@@ -221,7 +221,7 @@ export function resolveType(type?: MorphType, parentTypeMap?: Record<string, Mor
 
             if (allTheSameLiteralType) {
                 const enumType: EnumerateType = {
-                    typeName: 'enum',
+                    typeName: "enum",
                     enumMembers: type.getUnionTypes().map((t) => t.getLiteralValue())
                 };
                 return enumType;
@@ -243,7 +243,7 @@ export function resolveType(type?: MorphType, parentTypeMap?: Record<string, Mor
 
             const unionType: UnionType = {
                 types: uniqueUnionTypes,
-                typeName: ''
+                typeName: ""
             };
 
             return unionType;
@@ -263,7 +263,7 @@ export function resolveType(type?: MorphType, parentTypeMap?: Record<string, Mor
             }
             const literalValue = getLiteralValue(node.compilerNode, MetadataGenerator.current.morph);
             const literalType: ConstType = {
-                typeName: 'const',
+                typeName: "const",
                 value: literalValue
             };
             return literalType;
@@ -291,9 +291,9 @@ export function getCommonPrimitiveAndArrayUnionType(type: MorphType): Type | nul
             .map((t) => {
                 return resolveType(t);
             })
-            .filter((t) => t.typeName !== 'undefined');
-        const arrType = types.find((t) => t.typeName === 'array') as ArrayType | undefined;
-        const primitiveType = types.find((t) => t.typeName !== 'array');
+            .filter((t) => t.typeName !== "undefined");
+        const arrType = types.find((t) => t.typeName === "array") as ArrayType | undefined;
+        const primitiveType = types.find((t) => t.typeName !== "array");
 
         if (
             types.length === 2 &&
@@ -332,7 +332,7 @@ export function getLiteralValue(expression: ts.Expression | ts.PropertySignature
             const argumentValue = getLiteralValue(argumentExpression.compilerNode, morph);
             if (
                 Array.isArray(identifierValue) &&
-                (typeof argumentValue === 'number' || typeof argumentValue === 'string')
+                (typeof argumentValue === "number" || typeof argumentValue === "string")
             ) {
                 return identifierValue[argumentValue as number];
             }
@@ -394,14 +394,14 @@ function getTypeObject(type: MorphType) {
     return typeKey;
 }
 
-function replaceNameText(text = '') {
+function replaceNameText(text = "") {
     return text
-        .replace(/\</g, '-')
-        .replace(/\>/g, '-')
-        .replace(/\,/g, '.')
-        .replace(/\|/g, '_or_')
-        .replace(/\[\]/g, 'Array')
-        .replace(/[^A-Z|a-z|0-9|_|\-|.]/g, '');
+        .replace(/\</g, "-")
+        .replace(/\>/g, "-")
+        .replace(/\,/g, ".")
+        .replace(/\|/g, "_or_")
+        .replace(/\[\]/g, "Array")
+        .replace(/[^A-Z|a-z|0-9|_|\-|.]/g, "");
 }
 
 function getTypeArgumentMap(type: MorphType): Record<string, MorphType> {
@@ -416,9 +416,9 @@ function getTypeArgumentMap(type: MorphType): Record<string, MorphType> {
 }
 
 function handleSpecialTypes(type: MorphType, node?: Node): Type | undefined {
-    let symbolText = type.getSymbol()?.getName() ?? '';
+    let symbolText = type.getSymbol()?.getName() ?? "";
 
-    if (symbolText === 'Promise') {
+    if (symbolText === "Promise") {
         const typeArgument = type.getTypeArguments()[0];
         if (!typeArgument) {
             throw new Error(`Promise type ${type.getText()} is not resolved. Type argument is missing.`);
@@ -426,38 +426,38 @@ function handleSpecialTypes(type: MorphType, node?: Node): Type | undefined {
         return resolveType(typeArgument);
     }
 
-    if (symbolText === 'Buffer') {
-        return { typeName: 'buffer' };
+    if (symbolText === "Buffer") {
+        return { typeName: "buffer" };
     }
-    if (symbolText === 'DownloadBinaryData') {
-        return { typeName: 'buffer' };
+    if (symbolText === "DownloadBinaryData") {
+        return { typeName: "buffer" };
     }
-    if (symbolText === 'DownloadResource') {
-        return { typeName: 'buffer' };
+    if (symbolText === "DownloadResource") {
+        return { typeName: "buffer" };
     }
 
-    if (symbolText === 'Date') {
+    if (symbolText === "Date") {
         if (!node) {
-            return { typeName: 'datetime' };
+            return { typeName: "datetime" };
         }
         if (Node.isDecoratable(node)) {
             const decorators = node.getDecorators();
             const decoratorName = decorators.map((decorator) => decorator.getName());
             switch (true) {
-                case decoratorName.includes('IsDate'):
-                    return { typeName: 'date' };
-                case decoratorName.includes('IsDateTime'):
-                    return { typeName: 'datetime' };
+                case decoratorName.includes("IsDate"):
+                    return { typeName: "date" };
+                case decoratorName.includes("IsDateTime"):
+                    return { typeName: "datetime" };
                 default:
-                    return { typeName: 'datetime' };
+                    return { typeName: "datetime" };
             }
         }
-        return { typeName: 'datetime' };
+        return { typeName: "datetime" };
     }
 
     if (type.isNumber()) {
         if (!node) {
-            return { typeName: 'double' };
+            return { typeName: "double" };
         }
         const tagsOrDecorators = [] as string[];
 
@@ -476,14 +476,14 @@ function handleSpecialTypes(type: MorphType, node?: Node): Type | undefined {
             tagsOrDecorators.push(...decoratorName);
         }
         switch (true) {
-            case tagsOrDecorators.includes('IsInt'):
-                return { typeName: 'integer' };
-            case tagsOrDecorators.includes('IsLong'):
-                return { typeName: 'long' };
-            case tagsOrDecorators.includes('IsFloat'):
-                return { typeName: 'float' };
-            case tagsOrDecorators.includes('IsDouble'):
-                return { typeName: 'double' };
+            case tagsOrDecorators.includes("IsInt"):
+                return { typeName: "integer" };
+            case tagsOrDecorators.includes("IsLong"):
+                return { typeName: "long" };
+            case tagsOrDecorators.includes("IsFloat"):
+                return { typeName: "float" };
+            case tagsOrDecorators.includes("IsDouble"):
+                return { typeName: "double" };
         }
     }
 
