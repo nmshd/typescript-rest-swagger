@@ -14,6 +14,7 @@ import {
     Security
 } from "@nmshd/typescript-rest";
 
+import { IRoute } from "express-serve-static-core";
 import * as swagger from "../../src/decorators";
 import { TestInterface } from "./TestInterface";
 
@@ -199,6 +200,13 @@ export class MyService {
     @POST
     @Path("literal-values")
     public testLiteralValues(body: any): MyLiteralDatatype {
+        return body;
+    }
+
+    @POST
+    @Path("external-type")
+    // Omit 'stack' property to avoid polluting the spec with large depending objects
+    public externalType(body: Omit<IRoute<string>, "stack">): any {
         return body;
     }
 }

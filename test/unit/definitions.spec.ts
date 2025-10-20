@@ -525,4 +525,15 @@ describe("Definition generation", () => {
             expect(propSpec.const).toEqual("subValue1");
         });
     });
+
+    describe("External types", () => {
+        test("external types schould not have 'import' in its name", async () => {
+            let expression = jsonata(
+                'paths."/mypath/external-type".post.requestBody.content."application/json".schema."$ref"'
+            );
+            let reqBodyRef: string = await expression.evaluate(spec);
+
+            expect(reqBodyRef).toEqual("#/components/schemas/Omit-IRoute-string-.stack-");
+        });
+    });
 });

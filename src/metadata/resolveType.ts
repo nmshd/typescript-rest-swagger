@@ -117,7 +117,7 @@ export function resolveType(type?: MorphType, parentTypeMap?: Record<string, Mor
                 throw new Error(`Node is required to resolve type for ${type.getText()}`);
             }
 
-            let typeName = type.getText(declarationNode);
+            let typeName = type.getText(declarationNode, ts.TypeFormatFlags.UseAliasDefinedOutsideCurrentScope);
 
             // sometimes the type text is the pure definition {prop:string} those need to be filtered out
             if (typeName.trim().startsWith("{")) {
