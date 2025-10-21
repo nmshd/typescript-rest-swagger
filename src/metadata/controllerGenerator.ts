@@ -1,18 +1,17 @@
-import * as _ from "lodash";
+import { Project } from "ts-morph";
 import * as ts from "typescript";
 import { getDecoratorTextValue, isDecorator } from "../utils/decoratorUtils";
-import { normalizePath } from "../utils/pathUtils";
+import { normalizePath } from "../utils/utils";
 import { EndpointGenerator } from "./endpointGenerator";
 import { Controller } from "./metadataGenerator";
 import { MethodGenerator } from "./methodGenerator";
-import { getSuperClass } from "./resolveType";
 
 export class ControllerGenerator extends EndpointGenerator<ts.ClassDeclaration> {
     private readonly pathValue: string | undefined;
     private genMethods: Set<string> = new Set<string>();
 
-    constructor(node: ts.ClassDeclaration) {
-        super(node, "controllers");
+    constructor(node: ts.ClassDeclaration, morph: Project) {
+        super(node, morph, "controllers");
         this.pathValue = normalizePath(getDecoratorTextValue(node, (decorator) => decorator.text === "Path"));
     }
 
@@ -54,34 +53,14 @@ export class ControllerGenerator extends EndpointGenerator<ts.ClassDeclaration> 
     }
 
     private buildMethods() {
-        let typeArgumentsMap = new Map<String, ts.TypeNode>();
-        if (this.node.typeParameters) {
-            this.node.typeParameters.forEach((typeParameter) => {
-                let constraint = ts.getEffectiveConstraintOfTypeParameter(typeParameter);
-                if (constraint) {
-                    typeArgumentsMap.set(typeParameter.name.escapedText.toString(), constraint);
-                }
-            });
-        }
-
-        let result: Array<any> = [];
-        let targetClass: any = {
-            type: this.node,
-            typeArguments: typeArgumentsMap
-        };
-        while (targetClass) {
-            result = _.union(result, this.buildMethodsForClass(targetClass.type, targetClass.typeArguments));
-            targetClass = getSuperClass(targetClass.type, targetClass.typeArguments);
-        }
-
-        return result;
+        return this.buildMethodsForClass(this.node);
     }
 
-    private buildMethodsForClass(node: ts.ClassDeclaration, genericTypeMap?: Map<String, ts.TypeNode>) {
+    private buildMethodsForClass(node: ts.ClassDeclaration) {
         return node.members
             .filter((m) => m.kind === ts.SyntaxKind.MethodDeclaration)
             .filter((m) => !isDecorator(m, (decorator) => "Hidden" === decorator.text))
-            .map((m: ts.MethodDeclaration) => new MethodGenerator(m, this.pathValue || "", genericTypeMap))
+            .map((m: ts.MethodDeclaration) => new MethodGenerator(m, this.morph, this.pathValue || "", this.node))
             .filter((generator) => {
                 if (generator.isValid() && !this.genMethods.has(generator.getMethodName())) {
                     this.genMethods.add(generator.getMethodName());

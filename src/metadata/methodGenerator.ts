@@ -1,8 +1,9 @@
 import * as pathUtil from "path";
+import { MethodDeclaration, Project } from "ts-morph";
 import * as ts from "typescript";
-import { getDecorators } from "../utils/decoratorUtils";
+import { DecoratorData, getDecorators } from "../utils/decoratorUtils";
 import { getJSDocDescription, getJSDocTag, isExistJSDocTag } from "../utils/jsDocUtils";
-import { normalizePath } from "../utils/pathUtils";
+import { getNodeAsTsMorphNode, normalizePath } from "../utils/utils";
 import { EndpointGenerator } from "./endpointGenerator";
 import { Method, Parameter, ResponseData, ResponseType, Type } from "./metadataGenerator";
 import { ParameterGenerator } from "./parameterGenerator";
@@ -14,10 +15,11 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
 
     constructor(
         node: ts.MethodDeclaration,
+        morph: Project,
         private readonly controllerPath: string,
-        private readonly genericTypeMap?: Map<String, ts.TypeNode>
+        public classNode: ts.ClassDeclaration
     ) {
-        super(node, "methods");
+        super(node, morph, "methods");
         this.processMethodDecorators();
     }
 
@@ -36,26 +38,30 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
         }
 
         this.debugger("Generating Metadata for method %s", this.getCurrentLocation());
-        // TODO implement implicit return type
-        // const typeChecker = MetadataGenerator.current.typeChecker;
-        // const signature =
-        //   typeChecker.getSignatureFromDeclaration(this.node);
-        // const returnType = typeChecker.getReturnTypeOfSignature(signature);
-        // const kind = ts.SyntaxKind[this.node.kind];
-        const identifier = this.node.name as ts.Identifier;
-        const type = resolveType(this.node.type, this.genericTypeMap);
-        const responses = this.mergeResponses(
-            this.getResponses(this.genericTypeMap),
-            this.getMethodSuccessResponse(type)
-        );
 
+        const identifier = this.node.name as ts.Identifier;
+
+        const tsMorphNode = getNodeAsTsMorphNode(this.node, this.morph);
+
+        if (!(tsMorphNode instanceof MethodDeclaration)) {
+            throw new Error(`Node ${this.getCurrentLocation()} is not a valid MethodDeclaration.`);
+        }
+
+        const type = resolveType(tsMorphNode.getReturnType(), tsMorphNode);
+        const responses = this.mergeResponses(this.getResponses(), this.getMethodSuccessResponse(type));
+        const bodyDecorator = getDecorators(this.node, (decorator) => {
+            return decorator.text === "Body";
+        });
+        if (bodyDecorator && bodyDecorator.length > 1) {
+            throw new Error(`Only one Body decorator allowed in '${this.getCurrentLocation()}' method.`);
+        }
         const methodMetadata = {
             consumes: this.getDecoratorValues("Consumes"),
             deprecated: isExistJSDocTag(this.node, "deprecated"),
             description: getJSDocDescription(this.node),
             method: this.method,
             name: identifier.text,
-            parameters: this.buildParameters(),
+            parameters: this.buildParameters(bodyDecorator[0]),
             path: this.path,
             produces: this.getDecoratorValues("Produces")
                 ? this.getDecoratorValues("Produces")
@@ -76,14 +82,14 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
         return `${controllerId.text}.${methodId.text}`;
     }
 
-    private buildParameters() {
+    private buildParameters(bodyDecorator: DecoratorData) {
         this.debugger("Processing method %s parameters.", this.getCurrentLocation());
         const parameters = this.node.parameters
             .map((p) => {
                 try {
                     const path = pathUtil.posix.join("/", this.controllerPath ? this.controllerPath : "", this.path);
 
-                    return new ParameterGenerator(p, this.method, path, this.genericTypeMap).generate();
+                    return new ParameterGenerator(p, this.method, path, this.morph).generate(bodyDecorator);
                 } catch (e) {
                     const methodId = this.node.name as ts.Identifier;
                     const controllerId = (this.node.parent as ts.ClassDeclaration).name as ts.Identifier;
@@ -137,9 +143,15 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
                 }' method is acceptable, Found: ${httpMethodDecorators.map((d) => d.text).join(", ")}`
             );
         }
-        if (pathDecorators) {
+        if (pathDecorators && pathDecorators.length === 1) {
             const pathDecorator = pathDecorators[0];
-            this.path = pathDecorator ? `/${normalizePath(pathDecorator.arguments[0])}` : "";
+            const argument = pathDecorator?.arguments[0];
+            if (argument && typeof argument !== "string") {
+                throw new Error(
+                    `Only string literal arguments are allowed in Path decorator in '${this.getCurrentLocation()}' method.`
+                );
+            }
+            this.path = pathDecorator ? `/${normalizePath(argument)}` : "";
         } else {
             this.path = "";
         }
@@ -170,7 +182,10 @@ export class MethodGenerator extends EndpointGenerator<ts.MethodDeclaration> {
                 return { status: "302", type: type.typeArgument || type };
             case "DownloadResource":
             case "DownloadBinaryData":
-                return { status: "200", type: { typeName: "buffer" } };
+                return {
+                    status: "200",
+                    type: { typeName: "buffer" }
+                };
             default:
                 return { status: "200", type: type };
         }

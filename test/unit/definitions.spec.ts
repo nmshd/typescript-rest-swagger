@@ -4,17 +4,19 @@ import { Metadata, MetadataGenerator } from "../../src/metadata/metadataGenerato
 import { SpecGenerator } from "../../src/swagger/generator";
 import { Swagger } from "../../src/swagger/swagger";
 import { getDefaultOptions } from "../data/defaultOptions";
+import YAML = require("yamljs");
 
-// tslint:disable: no-unused-expression
 const jsonata = require("jsonata");
 
 describe("Definition generation", () => {
     let spec: Swagger.Spec;
     let specDeRef: Swagger.Spec;
+    let specString: string;
     let metadata: Metadata;
     beforeAll(async () => {
         metadata = new MetadataGenerator(["./test/data/apis.ts"], "./test/tsconfig.json").generate();
         spec = new SpecGenerator(metadata, getDefaultOptions()).getSwaggerSpec();
+        specString = YAML.stringify(spec, 10, 4);
         specDeRef = (await swaggerParser.dereference(cloneDeep(spec) as any)) as unknown as Swagger.Spec;
     });
 
@@ -29,21 +31,19 @@ describe("Definition generation", () => {
             expect(spec.paths).toHaveProperty("/promise/{id}");
         });
 
-        // it("should generate examples for object parameter", async () => {
-        //   expect(spec.paths).toHaveProperty("/mypath/secondpath");
-        //   const expression = jsonata(
-        //     'paths."/mypath/secondpath".get.responses."200".examples."application/json".name'
-        //   );
-        //   expect(await expression.evaluate(spec)).toEqual("Joe");
-        // });
+        it("should generate examples for object parameter", async () => {
+            expect(spec.paths).toHaveProperty("/mypath/secondpath");
+            const expression = jsonata(
+                'paths."/mypath/secondpath".get.responses."200".content."application/json".example.name'
+            );
+            expect(await expression.evaluate(spec)).toEqual("Joe");
+        });
 
-        // it("should generate examples for array parameter", async () => {
-        //   expect(spec.paths).toHaveProperty("/mypath");
-        //   const expression = jsonata(
-        //     'paths."/mypath".post.responses."200".examples."application/json".name'
-        //   );
-        //   expect(await expression.evaluate(spec)).toEqual("Joe");
-        // });
+        it("should generate examples for array parameter", async () => {
+            expect(spec.paths).toHaveProperty("/mypath");
+            const expression = jsonata('paths."/mypath".post.responses."200".content."application/json".example.name');
+            expect(await expression.evaluate(spec)).toEqual("Joe");
+        });
 
         it("should generate optional parameters for params with question marks, default or undefined union initializers", async () => {
             let expression = jsonata('paths."/mypath/secondpath".get.parameters[0].required');
@@ -68,11 +68,6 @@ describe("Definition generation", () => {
             paramSpec = await expression.evaluate(spec);
             expect(paramSpec.schema.type).toEqual("number");
             expect(paramSpec.schema.enum).toEqual([0, 1]);
-
-            expression = jsonata('paths."/mypath/secondpath".get.parameters[5]');
-            paramSpec = await expression.evaluate(spec);
-            expect(paramSpec.schema.type).toEqual("string");
-            expect(paramSpec.schema.enum).toEqual([0, "String param"]);
         });
 
         it("should generate description for methods and parameters", async () => {
@@ -93,10 +88,10 @@ describe("Definition generation", () => {
                 'paths."/mypath/secondpath".get.responses."200".content."application/json".schema."$ref"'
             );
             expect(await expression.evaluate(spec)).toEqual("#/components/schemas/Person");
-            // expression = jsonata(
-            //   'paths."/mypath/secondpath".get.responses."200".examples."application/json"[0].name'
-            // );
-            // expect(await expression.evaluate(spec)).toEqual("Joe");
+            expression = jsonata(
+                'paths."/mypath/secondpath".get.responses."200".content."application/json"[0].example.name'
+            );
+            expect(await expression.evaluate(spec)).toEqual("Joe");
         });
 
         it("should include default response if a non-conflicting response is declared with a decorator", async () => {
@@ -113,10 +108,8 @@ describe("Definition generation", () => {
             expect(Object.keys(await expression.evaluate(spec)).length).toEqual(2);
             expression = jsonata('paths."/promise".post.responses."201".description');
             expect(await expression.evaluate(spec)).toEqual("Person Created");
-            // expression = jsonata(
-            //   'paths."/promise".post.responses."201".examples."application/json".name'
-            // );
-            // expect(await expression.evaluate(spec)).toEqual("Test Person");
+            expression = jsonata('paths."/promise".post.responses."201".content."application/json".example.name');
+            expect(await expression.evaluate(spec)).toEqual("Test Person");
             expression = jsonata('paths."/promise".post.responses."401".description');
             expect(await expression.evaluate(spec)).toEqual("Unauthorized");
         });
@@ -126,10 +119,8 @@ describe("Definition generation", () => {
             expect(Object.keys(await expression.evaluate(spec)).length).toEqual(2);
             expression = jsonata('paths."/promise/{id}".get.responses."200".description');
             expect(await expression.evaluate(spec)).toEqual("All Good");
-            // expression = jsonata(
-            //   'paths."/promise/{id}".get.responses."200".examples."application/json".name'
-            // );
-            // expect(await expression.evaluate(spec)).toEqual("Test Person");
+            expression = jsonata('paths."/promise/{id}".get.responses."200".content."application/json".example.name');
+            expect(await expression.evaluate(spec)).toEqual("Test Person");
             expression = jsonata('paths."/promise/{id}".get.responses."401".description');
             expect(await expression.evaluate(spec)).toEqual("Unauthorized");
         });
@@ -140,17 +131,11 @@ describe("Definition generation", () => {
         });
 
         it("should generate a body param with string schema type", async () => {
-            // let expression = jsonata('paths."/mypath".post.parameters[0].in');
-            // expect(await expression.evaluate(spec)).toEqual("body");
-            // expression = jsonata('paths."/mypath".post.parameters[0].name');
-            // expect(await expression.evaluate(spec)).toEqual("body");
             let expression = jsonata('paths."/mypath".post.requestBody.content."application/json".schema.type');
             expect(await expression.evaluate(spec)).toEqual("string");
         });
 
         it("should generate a body param with object schema type", async () => {
-            // let expression = jsonata('paths."/mypath/obj".post.parameters[0].name');
-            // expect(await expression.evaluate(spec)).toEqual("data");
             let expression = jsonata('paths."/mypath/obj".post.requestBody.content."application/json".schema.type');
             expect(await expression.evaluate(spec)).toEqual("object");
         });
@@ -178,7 +163,7 @@ describe("Definition generation", () => {
             expect(param.name).toEqual("num");
             expect(param.required).toEqual(false);
             expect(param.schema.type).toEqual("number");
-            // expect(param.schema.default).toEqual(5); TODO default values
+            expect(param.schema.default).toEqual(5);
         });
 
         it("should generate default value for a string query param", async () => {
@@ -186,7 +171,7 @@ describe("Definition generation", () => {
             expect(param.name).toEqual("str");
             expect(param.required).toEqual(false);
             expect(param.schema.type).toEqual("string");
-            // expect(param.schema.default).toEqual("default value");
+            expect(param.schema.default).toEqual("default value");
         });
 
         it("should generate default value for a true boolean query param", async () => {
@@ -194,7 +179,7 @@ describe("Definition generation", () => {
             expect(param.name).toEqual("bool1");
             expect(param.required).toEqual(false);
             expect(param.schema.type).toEqual("boolean");
-            // expect(param.schema.default).toEqual(true);
+            expect(param.schema.default).toEqual(true);
         });
 
         it("should generate default value for a false boolean query param", async () => {
@@ -202,7 +187,7 @@ describe("Definition generation", () => {
             expect(param.name).toEqual("bool2");
             expect(param.required).toEqual(false);
             expect(param.schema.type).toEqual("boolean");
-            // expect(param.schema.default).toEqual(false);
+            expect(param.schema.default).toEqual(false);
         });
 
         it("should generate default value for a string array query param", async () => {
@@ -212,37 +197,29 @@ describe("Definition generation", () => {
             expect(param.schema.type).toEqual("array");
             expect(param.schema.items).toBeDefined;
             expect(param.schema.items.type).toEqual("string");
-            // expect(param.default).toStrictEqual(["a", "b", "c"]);
+            expect(param.schema.default).toStrictEqual(["a", "b", "c"]);
         });
     });
 
     describe("TypeEndpoint", () => {
-        // it("should generate definitions for type aliases", async () => {
-        //   expect(spec.paths).toHaveProperty("/type/{param}");
-        //   // let expression = jsonata(
-        //   //   "components.schemas.SimpleHelloType.properties.greeting.description"
-        //   // );
-        //   // expect(await expression.evaluate(spec)).toEqual(
-        //   //   "Description for greeting property"
-        //   // );
+        it("should generate definitions for type aliases", async () => {
+            expect(spec.paths).toHaveProperty("/type/{param}");
+            let expression = jsonata("components.schemas.SimpleHelloType.properties.greeting.description");
+            expect(await expression.evaluate(spec)).toEqual("Description for greeting property");
 
-        //   let expression = jsonata("components.schemas.UUID");
-        //   expect(await expression.evaluate(spec)).toEqual({
-        //     description: "",
-        //     properties: {},
-        //     type: "object",
-        //   });
-        // });
+            // expression = jsonata("components.schemas.UUID");
+            // expect(await expression.evaluate(spec)).toEqual({
+            //   description: "",
+            //   properties: {},
+            //   type: "object",
+            // });
+        });
 
         it("should generate nested object types in definitions", async () => {
             let expression = jsonata("components.schemas.SimpleHelloType.properties.profile.type");
             expect(await expression.evaluate(spec)).toEqual("object");
-            // expression = jsonata(
-            //   "components.schemas.SimpleHelloType.properties.profile.description"
-            // );
-            // expect(await expression.evaluate(spec)).toEqual(
-            //   "Description for profile"
-            // );
+            expression = jsonata("components.schemas.SimpleHelloType.properties.profile.description");
+            expect(await expression.evaluate(spec)).toEqual("Description for profile");
             expression = jsonata("components.schemas.SimpleHelloType.properties.profile.properties.name.type");
             expect(await expression.evaluate(spec)).toEqual("string");
             expression = jsonata("components.schemas.SimpleHelloType.properties.profile.properties.name.description");
@@ -283,16 +260,23 @@ describe("Definition generation", () => {
             expect(spec.paths).toHaveProperty("/mypath/test-form-param");
             let expression = jsonata('paths."/mypath/test-form-param".post.responses."200".content."text/html".schema');
             expect(await expression.evaluate(spec)).toEqual({ type: "string" });
-            // expression = jsonata(
-            //   'paths."/mypath/test-form-param".post.parameters[0]'
-            // );
-            // expect(await expression.evaluate(spec)).toEqual({
-            //   description: "",
-            //   in: "formData",
-            //   name: "id",
-            //   required: true,
-            //   type: "string",
-            // });
+            expression = jsonata('paths."/mypath/test-form-param".post.requestBody');
+            expect(await expression.evaluate(spec)).toEqual({
+                required: true,
+                content: {
+                    "multipart/form-data": {
+                        schema: {
+                            type: "object",
+                            properties: {
+                                id: {
+                                    type: "string",
+                                    description: ""
+                                }
+                            }
+                        }
+                    }
+                }
+            });
         });
     });
 
@@ -302,10 +286,8 @@ describe("Definition generation", () => {
             expect(await expression.evaluate(spec)).toEqual("integer");
             expression = jsonata("components.schemas.PrimitiveClassModel.properties.int.format");
             expect(await expression.evaluate(spec)).toEqual("int32");
-            // expression = jsonata(
-            //   "components.schemas.PrimitiveClassModel.properties.int.description"
-            // );
-            // expect(await expression.evaluate(spec)).toEqual("An integer");
+            expression = jsonata("components.schemas.PrimitiveClassModel.properties.int.description");
+            expect(await expression.evaluate(spec)).toEqual("An integer");
         });
 
         it("should generate integer type for @IsLong decorator declared on class property", async () => {
@@ -340,10 +322,8 @@ describe("Definition generation", () => {
             expect(await expression.evaluate(spec)).toEqual("integer");
             expression = jsonata("components.schemas.PrimitiveInterfaceModel.properties.int.format");
             expect(await expression.evaluate(spec)).toEqual("int32");
-            // expression = jsonata(
-            //   "components.schemas.PrimitiveInterfaceModel.properties.int.description"
-            // );
-            // expect(await expression.evaluate(spec)).toEqual("An integer");
+            expression = jsonata("components.schemas.PrimitiveInterfaceModel.properties.int.description");
+            expect(await expression.evaluate(spec)).toEqual("An integer");
         });
 
         it("should generate integer type for jsdoc @IsLong tag on interface property", async () => {
@@ -391,7 +371,7 @@ describe("Definition generation", () => {
             expression = jsonata(
                 'paths."/primitives/array".get.responses."200".content."application/json".schema."$ref"'
             );
-            expect(await expression.evaluate(spec)).toEqual("#/components/schemas/ResponseBody-Array-string--");
+            expect(await expression.evaluate(spec)).toEqual("#/components/schemas/ResponseBody-stringArray-");
         });
     });
 
@@ -408,12 +388,14 @@ describe("Definition generation", () => {
             expect(await expression.evaluate(spec)).toStrictEqual(["id", "name"]);
         });
 
-        // it("should use property description from base class if not defined in child", async () => {
-        //   const expression = jsonata(
-        //     "components.schemas.NamedEntity.properties.id.description"
-        //   );
-        //   expect(await expression.evaluate(spec)).toEqual("A numeric identifier");
-        // });
+        it("should use property description from base class if not defined in child", async () => {
+            let expression = jsonata("components.schemas.NamedEntity.properties.id.description");
+            expect(await expression.evaluate(spec)).toEqual("A numeric identifier");
+            expression = jsonata("components.schemas.NamedExtendEntity.properties.id.description");
+            expect(await expression.evaluate(spec)).toEqual("A numeric identifier");
+            expression = jsonata("components.schemas.NamedBothEntity.properties.id.description");
+            expect(await expression.evaluate(spec)).toEqual("A numeric identifier\nA numeric identifier2");
+        });
     });
 
     // describe("SecureEndpoint", () => {
@@ -495,6 +477,93 @@ describe("Definition generation", () => {
 
             const res = await expression.evaluate(spec);
             expect(res).toEqual("#/components/schemas/GenericA-Deep-EndArray.Error-.Error-");
+        });
+    });
+
+    describe("Body decorator", () => {
+        test("should support @Body decorator", async () => {
+            let expression = jsonata(
+                'paths."/mypath/dedicated-body".post.requestBody.content."application/json".schema'
+            );
+            let reqBodySpec = await expression.evaluate(spec);
+            expect(reqBodySpec).toEqual({
+                $ref: "#/components/schemas/MyDatatype"
+            });
+        });
+    });
+
+    describe("Literal types", () => {
+        test("should support literal types in definitions", async () => {
+            let expression = jsonata("components.schemas.MyLiteralDatatype.properties.propertyA");
+            let propSpec = await expression.evaluate(spec);
+            expect(propSpec.type).toEqual("string");
+            expect(propSpec.enum).toEqual(["value1", "value2"]);
+
+            expression = jsonata("components.schemas.MyLiteralDatatype.properties.propertyB");
+            propSpec = await expression.evaluate(spec);
+            expect(propSpec.type).toEqual("number");
+            expect(propSpec.enum).toEqual([1, 2]);
+
+            expression = jsonata("components.schemas.MyLiteralDatatype.properties.propertyC");
+            propSpec = await expression.evaluate(spec);
+            expect(propSpec.const).toEqual(true);
+
+            expression = jsonata("components.schemas.MyLiteralDatatype.properties.propertyD");
+            propSpec = await expression.evaluate(spec);
+            expect(propSpec.const).toEqual(false);
+
+            expression = jsonata("components.schemas.MyLiteralDatatype.properties.propertyE");
+            propSpec = await expression.evaluate(spec);
+            expect(propSpec.const).toEqual("fixedString");
+
+            expression = jsonata("components.schemas.MyLiteralDatatype.properties.propertyF");
+            propSpec = await expression.evaluate(spec);
+            expect(propSpec.const).toEqual(42);
+
+            expression = jsonata("components.schemas.MyLiteralDatatype.properties.propertyG.properties.subProperty");
+            propSpec = await expression.evaluate(spec);
+            expect(propSpec.const).toEqual("subValue1");
+        });
+    });
+
+    describe("External types", () => {
+        test("external types schould not have 'import' in its name", async () => {
+            let expression = jsonata(
+                'paths."/mypath/external-type".post.requestBody.content."application/json".schema."$ref"'
+            );
+            let reqBodyRef: string = await expression.evaluate(spec);
+
+            expect(reqBodyRef).toEqual("#/components/schemas/Omit-IRoute-string-.stack-");
+        });
+    });
+
+    describe("Intersection types", () => {
+        test("intersection types should resolve in an object with merged properties", async () => {
+            let expression = jsonata(
+                'paths."/mypath/intersection-type".post.requestBody.content."application/json".schema'
+            );
+            let typeSpec = await expression.evaluate(spec);
+
+            expect(typeSpec.type).toEqual("object");
+            expect(typeSpec.properties).toBeDefined();
+            expect(typeSpec.properties.a).toBeDefined();
+            expect(typeSpec.properties.b).toBeDefined();
+            expect(typeSpec.properties.a.type).toEqual("string");
+            expect(typeSpec.properties.b.type).toEqual("number");
+        });
+    });
+
+    describe("Recursive types", () => {
+        test("recursive types should reference themselves", async () => {
+            let expression = jsonata(
+                'paths."/mypath/recursive-type".post.requestBody.content."application/json".schema'
+            );
+            let typeSpec = await expression.evaluate(spec);
+            expect(typeSpec.$ref).toEqual("#/components/schemas/RecursiveType");
+
+            expression = jsonata("components.schemas.RecursiveType.properties.children.items");
+            let propSpec = await expression.evaluate(spec);
+            expect(propSpec.$ref).toEqual("#/components/schemas/RecursiveType");
         });
     });
 });

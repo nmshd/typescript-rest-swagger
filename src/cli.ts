@@ -31,7 +31,7 @@ parser.add_argument("-c", "--config", {
 });
 
 parser.add_argument("-t", "--tsconfig", {
-    action: "storeTrue",
+    action: "store_true",
     default: false,
     help: "Load tsconfig.json file"
 });
@@ -63,7 +63,7 @@ new SpecGenerator(metadata, swaggerConfig)
         console.info("Generation completed.");
     })
     .catch((err: any) => {
-        console.error(`Error generating swagger. ${err}`);
+        console.error(`Error generating swagger. ${err.stack}`);
     });
 
 function getPackageJsonValue(key: string): string {

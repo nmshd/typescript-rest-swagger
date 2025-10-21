@@ -31,6 +31,10 @@ export class MetadataGenerator {
         this.debugger("Entry File: %j ", entryFile);
         this.debugger("Ts Config Path: %j ", tsConfigFilePath);
         this.morph = new Project({
+            compilerOptions: {
+                //Enforce strict null check to be disabled as this ensures optional types are handled correctly
+                strictNullChecks: false
+            },
             tsConfigFilePath: tsConfigFilePath
         });
         this.morph.addSourceFilesAtPaths(entryFile);
@@ -118,7 +122,7 @@ export class MetadataGenerator {
         return this.nodes
             .filter((node) => node.kind === ts.SyntaxKind.ClassDeclaration)
             .filter((node) => !isDecorator(node, (decorator) => "Hidden" === decorator.text))
-            .map((classDeclaration: ts.ClassDeclaration) => new ControllerGenerator(classDeclaration))
+            .map((classDeclaration: ts.ClassDeclaration) => new ControllerGenerator(classDeclaration, this.morph))
             .filter((generator) => generator.isValid())
             .map((generator) => generator.generate());
     }
@@ -177,20 +181,48 @@ export interface Security {
 }
 
 export interface Type {
-    typeName: string;
+    typeName:
+        | "array"
+        | "object"
+        | "void"
+        | "string"
+        | "double"
+        | "boolean"
+        | "buffer"
+        | "integer"
+        | "long"
+        | "float"
+        | "date"
+        | "datetime"
+        | "enum"
+        | "undefined"
+        | "const"
+        | string;
     simpleTypeName?: string;
     typeArgument?: Type;
 }
 
+export interface ConstType extends Type {
+    typeName: "const";
+    value: string | number | boolean | object;
+}
+
 export interface EnumerateType extends Type {
-    enumMembers: Array<string>;
+    typeName: "enum";
+    enumMembers: Array<string | number | ts.PseudoBigInt | undefined>;
 }
 
 export interface UnionType extends Type {
+    typeName: string;
     types: Array<Type>;
 }
 
+export const isUnionType = (type: Type): type is UnionType => {
+    return (type as UnionType).types !== undefined;
+};
+
 export interface ReferenceType extends Type {
+    typeName: string;
     description: string;
     properties: Array<Property>;
     originalFileName: any;
@@ -200,6 +232,10 @@ export interface ReferenceType extends Type {
 export interface ObjectType extends Type {
     properties: Array<Property>;
 }
+
+export const isObjectType = (type: Type): type is ObjectType => {
+    return (type as ObjectType).properties !== undefined;
+};
 
 export interface ArrayType extends Type {
     elementType: Type;

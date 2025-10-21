@@ -1,13 +1,14 @@
 import * as debug from "debug";
 import * as fs from "fs";
-import { mkdirp } from "fs-extra-promise";
+import { mkdir } from "fs/promises";
 import * as _ from "lodash";
-import { OpenAPIV3 } from "openapi-types";
+import { OpenAPIV3_1 } from "openapi-types";
 import * as pathUtil from "path";
 import * as YAML from "yamljs";
 import { SwaggerConfig } from "../config";
 import {
     ArrayType,
+    ConstType,
     EnumerateType,
     Metadata,
     Method,
@@ -41,7 +42,7 @@ export class SpecGenerator {
             const swaggerDirs = _.castArray(this.config.outputDirectory);
             this.debugger("Saving specs to folders: %j", swaggerDirs);
             swaggerDirs.forEach((swaggerDir) => {
-                mkdirp(swaggerDir)
+                mkdir(swaggerDir, { recursive: true })
                     .then(() => {
                         this.debugger("Saving specs json file to folder: %j", swaggerDir);
                         fs.writeFile(`${swaggerDir}/swagger.json`, JSON.stringify(spec, null, "\t"), (err: any) => {
@@ -131,7 +132,7 @@ export class SpecGenerator {
     // }
 
     private buildDefinitions() {
-        const definitions: { [definitionsName: string]: OpenAPIV3.SchemaObject } = {};
+        const definitions: { [definitionsName: string]: OpenAPIV3_1.SchemaObject } = {};
         Object.keys(this.metadata.referenceTypes).map((typeName) => {
             this.debugger("Generating definition for type: %s", typeName);
             const referenceType = this.metadata.referenceTypes[typeName];
@@ -155,7 +156,7 @@ export class SpecGenerator {
     }
 
     private buildPaths() {
-        const paths: { [pathName: string]: OpenAPIV3.PathItemObject } = {};
+        const paths: { [pathName: string]: OpenAPIV3_1.PathItemObject } = {};
 
         this.debugger("Generating paths declarations");
         this.metadata.controllers.forEach((controller) => {
@@ -179,7 +180,7 @@ export class SpecGenerator {
     }
 
     private buildPathMethod(controllerName: string, method: Method) {
-        const pathMethod: OpenAPIV3.OperationObject = this.buildOperation(controllerName, method);
+        const pathMethod: OpenAPIV3_1.OperationObject = this.buildOperation(controllerName, method);
         pathMethod.description = method.description;
         if (method.summary) {
             pathMethod.summary = method.summary;
@@ -197,11 +198,19 @@ export class SpecGenerator {
         //   }));
         // }
 
-        const [bodyParam, noBodyParameter] = method.parameters.reduce<[Parameter[], Parameter[]]>(
-            ([pass, fail], elem) => {
-                return elem.in === "body" ? [[...pass, elem], fail] : [pass, [...fail, elem]];
+        const [bodyParam, noBodyParameter, formDataParameter] = method.parameters.reduce<
+            [Parameter[], Parameter[], Parameter[]]
+        >(
+            ([body, noBody, formData], elem) => {
+                if (elem.in === "body") {
+                    return [[...body, elem], noBody, formData];
+                } else if (elem.in === "formData") {
+                    return [body, noBody, [...formData, elem]];
+                } else {
+                    return [body, [...noBody, elem], formData];
+                }
             },
-            [[], []]
+            [[], [], []]
         );
 
         pathMethod.parameters = noBodyParameter.filter((p) => p.in !== "param").map((p) => this.buildParameter(p));
@@ -219,22 +228,13 @@ export class SpecGenerator {
                         type: p.type
                     })
                 );
-                // pathMethod.parameters.push(
-                //   this.buildParameter({
-                //     description: p.description,
-                //     in: "formData",
-                //     name: p.name,
-                //     parameterName: p.parameterName,
-                //     required: false,
-                //     type: p.type,
-                //   })
-                // );
             });
         if (bodyParam.length > 1) {
             throw new Error("Only one body parameter allowed per controller method.");
         }
         if (bodyParam.length > 0) {
             pathMethod.requestBody = {
+                required: true,
                 content: {
                     "application/json": {
                         schema: this.getSwaggerType(bodyParam[0].type)
@@ -243,11 +243,38 @@ export class SpecGenerator {
                 description: bodyParam[0].description
             };
         }
+
+        if (formDataParameter.length > 0) {
+            pathMethod.requestBody = {
+                required: true,
+                content: {
+                    "multipart/form-data": {
+                        schema: {
+                            type: "object",
+                            properties: formDataParameter.reduce(
+                                (acc, param) => {
+                                    const paramType = this.getSwaggerType(param.type);
+                                    if (paramType) {
+                                        if (!isReferenceObject(paramType)) {
+                                            paramType.description = param.description;
+                                        }
+                                        // acc[param.name] = {type:paramType};
+                                        acc[param.name] = paramType;
+                                    }
+                                    return acc;
+                                },
+                                {} as { [key: string]: Schema }
+                            )
+                        }
+                    }
+                }
+            };
+        }
         return pathMethod;
     }
 
-    private buildParameter(parameter: Parameter): OpenAPIV3.ParameterObject {
-        const swaggerParameter: OpenAPIV3.ParameterObject = {
+    private buildParameter(parameter: Parameter): OpenAPIV3_1.ParameterObject {
+        const swaggerParameter: OpenAPIV3_1.ParameterObject = {
             description: parameter.description,
             in: parameter.in,
             name: parameter.name,
@@ -256,13 +283,21 @@ export class SpecGenerator {
 
         const parameterType = this.getSwaggerType(parameter.type);
 
+        //@ts-expect-error
         swaggerParameter.schema = parameterType;
+
+        if (swaggerParameter.schema && "$ref" in swaggerParameter.schema && parameter.default) {
+            throw new Error("Default value is not allowed for reference types.");
+        }
+        if (swaggerParameter.schema && !("$ref" in swaggerParameter.schema) && parameter.default !== undefined) {
+            swaggerParameter.schema.default = parameter.default;
+        }
 
         return swaggerParameter;
     }
 
     private buildProperties(properties: Array<Property>) {
-        const swaggerProperties: OpenAPIV3.BaseSchemaObject["properties"] = {};
+        const swaggerProperties: OpenAPIV3_1.BaseSchemaObject["properties"] = {};
 
         properties.forEach((property) => {
             const swaggerType = this.getSwaggerType(property.type);
@@ -279,16 +314,18 @@ export class SpecGenerator {
     }
 
     private buildOperation(controllerName: string, method: Method) {
-        const operation: OpenAPIV3.OperationObject = {
-            operationId: this.getOperationId(controllerName, method.name),
-            responses: {}
+        const operation: OpenAPIV3_1.OperationObject = {
+            operationId: this.getOperationId(controllerName, method.name)
         };
 
         method.responses.forEach((res: ResponseType) => {
+            if (!operation.responses) {
+                operation.responses = {};
+            }
             operation.responses[res.status] = {
                 description: res.description,
                 content: {}
-            } as OpenAPIV3.ResponseObject;
+            } as OpenAPIV3_1.ResponseObject;
 
             if (res.schema) {
                 const swaggerType = this.getSwaggerType(res.schema);
@@ -300,9 +337,9 @@ export class SpecGenerator {
                             schema: swaggerType
                         };
                     }
-                    // if (res.examples && mimeType) {
-                    //   codeObject.content[mimeType].examples = res.examples;
-                    // }
+                    if (res.examples && mimeType && codeObject.content) {
+                        codeObject.content[mimeType].example = res.examples;
+                    }
                 }
             }
         });
@@ -340,6 +377,13 @@ export class SpecGenerator {
             return swaggerType;
         }
 
+        const constType = type as ConstType;
+        if (constType.typeName === "const") {
+            return {
+                const: constType.value
+            };
+        }
+
         const arrayType = type as ArrayType;
         if (arrayType.elementType) {
             return this.getSwaggerTypeForArrayType(arrayType);
@@ -367,7 +411,7 @@ export class SpecGenerator {
 
             let groupedEnums = _.groupBy(enums, (e) => "type" in e && e.type);
 
-            _.each(groupedEnums, (enums, type: OpenAPIV3.NonArraySchemaObjectType) => {
+            _.each(groupedEnums, (enums, type: OpenAPIV3_1.NonArraySchemaObjectType) => {
                 let enumValues = _.flatten(enums.map((e) => "enum" in e && e.enum));
                 map.push({ type: type, enum: enumValues });
             });
@@ -383,7 +427,7 @@ export class SpecGenerator {
     }
 
     private getSwaggerTypeForPrimitiveType(type: Type) {
-        const typeMap: { [name: string]: OpenAPIV3.NonArraySchemaObject } = {
+        const typeMap: { [name: string]: OpenAPIV3_1.NonArraySchemaObject } = {
             binary: { type: "string", format: "binary" },
             boolean: { type: "boolean" },
             buffer: { type: "string", format: "binary" },
@@ -415,11 +459,14 @@ export class SpecGenerator {
             return undefined;
         }
 
-        return { type: "array", items: this.getSwaggerType(arrayType.elementType)! };
+        return {
+            type: "array",
+            items: this.getSwaggerType(arrayType.elementType)!
+        };
     }
 
     private getSwaggerTypeForEnumType(enumType: EnumerateType): Schema {
-        function getDerivedTypeFromValues(values: Array<any>): OpenAPIV3.NonArraySchemaObjectType {
+        function getDerivedTypeFromValues(values: Array<any>): OpenAPIV3_1.NonArraySchemaObjectType {
             return values.reduce((derivedType: string, item) => {
                 const currentType = typeof item;
                 derivedType = derivedType && derivedType !== currentType ? "string" : currentType;
@@ -434,7 +481,7 @@ export class SpecGenerator {
         };
     }
 
-    private getSwaggerTypeForReferenceType(referenceType: ReferenceType): OpenAPIV3.ReferenceObject {
+    private getSwaggerTypeForReferenceType(referenceType: ReferenceType): OpenAPIV3_1.ReferenceObject {
         return { $ref: `#/components/schemas/${referenceType.typeName}` };
     }
 }

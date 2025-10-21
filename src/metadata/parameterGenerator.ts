@@ -1,6 +1,8 @@
+import { Project } from "ts-morph";
 import * as ts from "typescript";
-import { getDecoratorName, getDecoratorOptions, getDecoratorTextValue } from "../utils/decoratorUtils";
-import { MetadataGenerator, Parameter, Type } from "./metadataGenerator";
+import { DecoratorData, getDecoratorName, getDecoratorOptions, getDecoratorTextValue } from "../utils/decoratorUtils";
+import { getNodeAsTsMorphNode } from "../utils/utils";
+import { isUnionType, MetadataGenerator, Parameter, Type } from "./metadataGenerator";
 import { getCommonPrimitiveAndArrayUnionType, getLiteralValue, resolveType } from "./resolveType";
 
 export class ParameterGenerator {
@@ -8,10 +10,10 @@ export class ParameterGenerator {
         private readonly parameter: ts.ParameterDeclaration,
         private readonly method: string,
         private readonly path: string,
-        private readonly genericTypeMap?: Map<String, ts.TypeNode>
+        private readonly morph: Project
     ) {}
 
-    public generate(): Parameter | undefined {
+    public generate(bodyDecorator?: DecoratorData): Parameter | undefined {
         const decoratorName = getDecoratorName(this.parameter, (identifier) =>
             this.supportParameterDecorator(identifier.text)
         );
@@ -22,7 +24,7 @@ export class ParameterGenerator {
             case "CookieParam":
                 return this.getCookieParameter(this.parameter);
             case "FormParam":
-                return undefined; // this.getFormParameter(this.parameter);
+                return this.getFormParameter(this.parameter);
             case "HeaderParam":
                 return this.getHeaderParameter(this.parameter);
             case "QueryParam":
@@ -30,9 +32,9 @@ export class ParameterGenerator {
             case "PathParam":
                 return this.getPathParameter(this.parameter);
             case "FileParam":
-                return undefined; //  this.getFileParameter(this.parameter);
+                return this.getFileParameter(this.parameter);
             case "FilesParam":
-                return undefined; //  this.getFilesParameter(this.parameter);
+                return this.getFilesParameter(this.parameter);
             case "Context":
             case "ContextRequest":
             case "ContextResponse":
@@ -41,7 +43,7 @@ export class ParameterGenerator {
             case "ContextAccept":
                 return this.getContextParameter(this.parameter);
             default:
-                return this.getBodyParameter(this.parameter);
+                return this.getBodyParameter(this.parameter, bodyDecorator);
         }
     }
 
@@ -100,9 +102,16 @@ export class ParameterGenerator {
         };
     }
 
-    private getBodyParameter(parameter: ts.ParameterDeclaration): Parameter {
+    private getBodyParameter(parameter: ts.ParameterDeclaration, bodyDecorator?: DecoratorData): Parameter {
+        let type;
         const parameterName = (parameter.name as ts.Identifier).text;
-        const type = this.getValidatedType(parameter);
+        if (bodyDecorator) {
+            const typeArgument = bodyDecorator.typeArguments[0];
+            const nodeAsTsMorphNode = getNodeAsTsMorphNode(typeArgument, this.morph);
+            type = resolveType(nodeAsTsMorphNode.getType(), nodeAsTsMorphNode);
+        } else {
+            type = this.getValidatedType(parameter);
+        }
 
         if (!this.supportsBodyParameters(this.method)) {
             throw new Error(`Body can't support ${this.method} method`);
@@ -143,8 +152,17 @@ export class ParameterGenerator {
         const parameterOptions = getDecoratorOptions(this.parameter, (ident) => ident.text === "QueryParam") || {};
         let type = this.getValidatedType(parameter);
 
+        if (isUnionType(type)) {
+            const typeWithoutUndefined = type.types.filter((t) => t.typeName !== "undefined");
+            if (typeWithoutUndefined.length === 1) {
+                type = typeWithoutUndefined[0];
+            }
+        }
+
         if (!this.supportQueryDataType(type)) {
-            const arrayType = getCommonPrimitiveAndArrayUnionType(parameter.type);
+            const arrayType = getCommonPrimitiveAndArrayUnionType(
+                getNodeAsTsMorphNode(parameter, this.morph).getType()
+            );
             if (arrayType && this.supportQueryDataType(arrayType)) {
                 type = arrayType;
             } else {
@@ -264,14 +282,66 @@ export class ParameterGenerator {
                 `Parameter ${parameter.name} doesn't have a valid type assigned in '${this.getCurrentLocation()}'.`
             );
         }
-        return resolveType(parameter.type, this.genericTypeMap);
+        const nodeAsTsMorphNode = getNodeAsTsMorphNode(parameter, this.morph);
+        return resolveType(nodeAsTsMorphNode.getType(), nodeAsTsMorphNode);
     }
 
     private getDefaultValue(initializer?: ts.Expression) {
         if (!initializer) {
             return;
         }
-        return getLiteralValue(initializer);
+        return getLiteralValue(initializer, this.morph);
+    }
+
+    private getFormParameter(parameter: ts.ParameterDeclaration): Parameter {
+        const parameterName = (parameter.name as ts.Identifier).text;
+        const type = this.getValidatedType(parameter);
+
+        if (!this.supportsBodyParameters(this.method)) {
+            throw new Error(`Form can't support '${this.getCurrentLocation()}' method.`);
+        }
+
+        return {
+            description: this.getParameterDescription(parameter),
+            in: "formData",
+            name: getDecoratorTextValue(this.parameter, (ident) => ident.text === "FormParam") || parameterName,
+            parameterName: parameterName,
+            required: !parameter.questionToken && !parameter.initializer,
+            type: type
+        };
+    }
+    private getFileParameter(parameter: ts.ParameterDeclaration): Parameter {
+        const parameterName = (parameter.name as ts.Identifier).text;
+
+        if (!this.supportsBodyParameters(this.method)) {
+            throw new Error(`FileParam can't support '${this.getCurrentLocation()}' method.`);
+        }
+
+        return {
+            description: this.getParameterDescription(parameter),
+            in: "formData",
+            name: getDecoratorTextValue(this.parameter, (ident) => ident.text === "FileParam") || parameterName,
+            parameterName: parameterName,
+            required: !parameter.questionToken,
+            type: { typeName: "file" }
+        };
+    }
+
+    private getFilesParameter(parameter: ts.ParameterDeclaration): Parameter {
+        const parameterName = (parameter.name as ts.Identifier).text;
+
+        if (!this.supportsBodyParameters(this.method)) {
+            throw new Error(`FilesParam can't support '${this.getCurrentLocation()}' method.`);
+        }
+
+        return {
+            description: this.getParameterDescription(parameter),
+            in: "formData",
+            name: getDecoratorTextValue(this.parameter, (ident) => ident.text === "FilesParam") || parameterName,
+            parameterName: parameterName,
+            required: !parameter.questionToken,
+            type: { typeName: "file" }
+        };
     }
 }
 

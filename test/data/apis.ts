@@ -14,6 +14,7 @@ import {
     Security
 } from "@nmshd/typescript-rest";
 
+import { IRoute } from "express-serve-static-core";
 import * as swagger from "../../src/decorators";
 import { TestInterface } from "./TestInterface";
 
@@ -68,16 +69,15 @@ enum TestNumericEnum {
     Option2
 }
 
-enum TestMixedEnum {
-    Option1,
-    Option2 = "String param"
+interface RecursiveType {
+    name: string;
+    children?: Array<RecursiveType>;
 }
 
 @Accept("text/plain")
 @Path("mypath")
 @swagger.Tags("My Services")
 export class MyService {
-    @swagger.Response<string>("default", "Error")
     @swagger.Response<string>(400, "The request format was incorrect.")
     @swagger.Response<string>(500, "There was an unexpected error.")
     @GET
@@ -102,7 +102,7 @@ export class MyService {
         @QueryParam("testOptional") test3?: string,
         @QueryParam("testEnum") test4?: TestEnum,
         @QueryParam("testNumericEnum") test5?: TestNumericEnum,
-        @QueryParam("testMixedEnum") test6?: TestMixedEnum
+        @QueryParam("testOptionalWithArray") test6?: string | string[]
     ): Person {
         return { name: "OK" };
     }
@@ -194,6 +194,38 @@ export class MyService {
     public testFormParam(@FormParam("id") id: string): string {
         return id;
     }
+
+    @POST
+    @Path("dedicated-body")
+    @swagger.Body<MyDatatype>()
+    public testDedicatedBody(body: any): any {
+        return body;
+    }
+
+    @POST
+    @Path("literal-values")
+    public testLiteralValues(body: any): MyLiteralDatatype {
+        return body;
+    }
+
+    @POST
+    @Path("external-type")
+    // Omit 'stack' property to avoid polluting the spec with large depending objects
+    public externalType(body: Omit<IRoute<string>, "stack">): any {
+        return body;
+    }
+
+    @POST
+    @Path("intersection-type")
+    public intersection(body: { a: string } & { b: number }): any {
+        return body;
+    }
+
+    @POST
+    @Path("recursive-type")
+    public recursiveType(body: RecursiveType): any {
+        return body;
+    }
 }
 
 class BaseService {
@@ -246,7 +278,7 @@ export class PromiseService extends BaseService {
     @swagger.Produces("application/pdf")
     public testFile(@QueryParam("testParam") test?: string): Promise<Return.DownloadBinaryData> {
         return new Promise<Return.DownloadBinaryData>((resolve, reject) => {
-            resolve(null);
+            resolve({ content: Buffer.from("test"), fileName: "test.text", mimeType: "application/text" });
         });
     }
 }
@@ -257,45 +289,47 @@ export class BasicModel {
 
 export class BasicEndpoint<T extends BasicModel> {
     protected list(@QueryParam("full") full?: boolean): Promise<Array<T>> {
-        return new Promise((resolve, reject) => {
-            // todo
-        });
+        return new Promise((resolve, reject) => {});
     }
 
     @POST
     protected save(entity: T): Promise<Return.NewResource<number>> {
-        return new Promise((resolve, reject) => {
-            // todo
-        });
+        return new Promise((resolve, reject) => {});
     }
 
     @PUT
     @Path("/:id")
     protected update(@PathParam("id") id: number, entity: T): Promise<void> {
-        return new Promise((resolve, reject) => {
-            // todo
-        });
+        return new Promise((resolve, reject) => {});
     }
 
     @DELETE
     @Path("/:id")
     protected remove(@PathParam("id") id: string): Promise<void> {
-        return new Promise((resolve, reject) => {
-            // todo
-        });
+        return new Promise((resolve, reject) => {});
     }
 
     @GET
     @Path("/:id")
     protected get(@PathParam("id") id: string): Promise<T> {
-        return new Promise((resolve, reject) => {
-            // todo
-        });
+        return new Promise((resolve, reject) => {});
     }
 }
 
 export interface MyDatatype extends BasicModel {
     property1: string;
+}
+
+export class MyLiteralDatatype {
+    propertyA: "value1" | "value2";
+    propertyB: 1 | 2;
+    propertyC: true;
+    propertyD: false;
+    propertyE: "fixedString";
+    propertyF: 42;
+    propertyG: {
+        subProperty: "subValue1";
+    };
 }
 
 @Path("generics1")
@@ -468,6 +502,12 @@ export class PrimitiveEndpoint {
     public getArray(): ResponseBody<Array<string>> {
         return { data: ["hello", "world"] };
     }
+
+    @Path("/date")
+    @POST
+    public getDate(@swagger.IsDate date: Date): ResponseBody<Date> {
+        return { data: new Date() };
+    }
 }
 
 @Path("parameterized/:objectId")
@@ -485,8 +525,23 @@ export abstract class Entity {
      */
     public id?: number;
 }
+export abstract class Entity2 {
+    /**
+     * A numeric identifier2
+     */
+    public id?: number;
+}
 
 export class NamedEntity implements Entity {
+    public id: number;
+    public name: string;
+}
+
+export class NamedExtendEntity extends Entity {
+    public id: number;
+    public name: string;
+}
+export class NamedBothEntity extends Entity implements Entity2 {
     public id: number;
     public name: string;
 }
@@ -496,6 +551,14 @@ export class AbstractEntityEndpoint {
     @GET
     public get(): NamedEntity {
         return new NamedEntity();
+    }
+    @POST
+    public post(): NamedExtendEntity {
+        return new NamedExtendEntity();
+    }
+    @PUT
+    public put(): NamedBothEntity {
+        return new NamedBothEntity();
     }
 }
 
@@ -508,7 +571,7 @@ export class SecureEndpoint {
     }
 
     @POST
-    @Security([], "user_email")
+    @Security(["**"], "user_email")
     public post(): string {
         return "Posted";
     }
@@ -517,7 +580,7 @@ export class SecureEndpoint {
 @Path("supersecure")
 @Security("access_token")
 @Security("user_email")
-@Security()
+@Security(["**"], "user_email")
 export class SuperSecureEndpoint {
     @GET
     public get(): string {
