@@ -225,10 +225,7 @@ export function resolveType(type?: MorphType, node?: Node): Type {
                     return curr;
                 }, new Array<string>());
             if (uniqueTypes.length > 1) {
-                throw new Error(
-                    `Mixed enum types are not supported by OpenAPI/Swagger.
-          Enum ${type.getText()} has mixed types.`
-                );
+                return { typeName: "void" };
             }
 
             const enumType: EnumerateType = {
