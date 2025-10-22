@@ -1,6 +1,6 @@
 {
   "name": "@nmshd/typescript-rest-swagger",
-  "version": "1.4.3",
+  "version": "1.5.0",
   "description": "Generate Swagger files from a typescript-rest project",
   "keywords": [
     "typescript",
