@@ -1,5 +1,4 @@
-import { EnumDeclaration, Expression, Type as MorphType, Node, Project } from "ts-morph";
-import * as ts from "typescript";
+import { EnumDeclaration, Expression, Type as MorphType, Node, Project, ts } from "ts-morph";
 import { getJSDocDescriptionFromProperty } from "../utils/jsDocUtils";
 import { getNodeAsTsMorphNode } from "../utils/utils";
 import {
@@ -167,22 +166,28 @@ export function resolveType(type?: MorphType, node?: Node): Type {
             }
             const tc = MetadataGenerator.current.morph.getTypeChecker();
 
-            const properties = type.getProperties().map<Property>((prop) => {
-                const tcType = tc.getTypeOfSymbolAtLocation(prop, declarationNode);
-                const propNode = prop.getDeclarations()[0];
+            const properties = type
+                .getProperties()
+                .map<Property | undefined>((prop) => {
+                    const tcType = tc.getTypeOfSymbolAtLocation(prop, declarationNode);
+                    const propNode = prop.getDeclarations()[0];
 
-                // if (typeName === "Something") {
-                // let a = undefined;
-                // }
-                let description = getJSDocDescriptionFromProperty(propNode, declarationNode);
+                    const isFunction = isFunctionLikeNode(propNode);
+                    if (isFunction) {
+                        return undefined;
+                    }
+                    const propertyType = resolveType(tcType, propNode);
 
-                return {
-                    name: prop.getName(),
-                    required: !prop.isOptional(),
-                    type: resolveType(tcType, propNode),
-                    description
-                };
-            });
+                    let description = getJSDocDescriptionFromProperty(propNode, declarationNode);
+
+                    return {
+                        name: prop.getName(),
+                        required: !prop.isOptional(),
+                        type: propertyType,
+                        description
+                    };
+                })
+                .filter((prop): prop is Property => prop !== undefined);
 
             if (!typeName) {
                 const objectType: ObjectType = {
@@ -555,4 +560,20 @@ function createCircularDependencyResolver(typeName: string) {
     });
 
     return referenceType;
+}
+function isFunctionLikeNode(propNode?: Node): boolean {
+    if (Node.isMethodDeclaration(propNode) || Node.isMethodSignature(propNode)) {
+        return true;
+    }
+
+    if (Node.isPropertyDeclaration(propNode) || Node.isPropertySignature(propNode)) {
+        return (
+            Node.isFunctionTypeNode(propNode.getTypeNode()) ||
+            Node.isArrowFunction(propNode.getInitializer()) ||
+            Node.isFunctionExpression(propNode.getInitializer()) ||
+            (Node.isTypeReference(propNode.getTypeNode()) && propNode.getTypeNode()?.getText() === "Function")
+        );
+    }
+
+    return false;
 }
