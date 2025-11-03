@@ -9,7 +9,7 @@ import * as path from "path";
 import { isAbsolute, join } from "path";
 import * as ts from "typescript";
 import * as YAML from "yamljs";
-import { Config, Specification, SwaggerConfig } from "./config";
+import { Config, SwaggerConfig } from "./config";
 import { MetadataGenerator } from "./metadata/metadataGenerator";
 import { SpecGenerator } from "./swagger/generator";
 
@@ -98,7 +98,6 @@ function validateSwaggerConfig(conf: SwaggerConfig): SwaggerConfig {
     conf.description = conf.description || descriptionDefault;
     conf.license = conf.license || licenseDefault;
     conf.yaml = conf.yaml === false ? false : true;
-    conf.outputFormat = conf.outputFormat ? Specification[conf.outputFormat] : Specification.Swagger_2;
 
     return conf;
 }
