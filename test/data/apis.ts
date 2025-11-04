@@ -226,6 +226,18 @@ export class MyService {
     public recursiveType(body: RecursiveType): any {
         return body;
     }
+
+    @POST
+    @Path("class-with-functions")
+    public classWithFunctions(body: ClassWithFunctions): any {
+        return body;
+    }
+
+    @POST
+    @Path("interface-with-functions")
+    public interfaceWithFunctions(body: InterfaceWithFunctions): any {
+        return body;
+    }
 }
 
 class BaseService {
@@ -318,6 +330,31 @@ export class BasicEndpoint<T extends BasicModel> {
 
 export interface MyDatatype extends BasicModel {
     property1: string;
+}
+
+export abstract class ClassWithFunctions {
+    methodA(): string {
+        return "value";
+    }
+
+    methodB = () => {
+        return 42;
+    };
+
+    methodC = function () {
+        return true;
+    };
+
+    methodD: () => number;
+
+    abstract methodE(): () => void;
+}
+
+export interface InterfaceWithFunctions {
+    methodA(): string;
+    methodB: () => number;
+    methodC: () => boolean;
+    methodD: Function;
 }
 
 export class MyLiteralDatatype {
