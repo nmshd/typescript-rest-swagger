@@ -176,6 +176,7 @@ export function resolveType(type?: MorphType, node?: Node): Type {
                     if (isFunction) {
                         return undefined;
                     }
+
                     const propertyType = resolveType(tcType, propNode);
 
                     let description = getJSDocDescriptionFromProperty(propNode, declarationNode);
@@ -561,6 +562,7 @@ function createCircularDependencyResolver(typeName: string) {
 
     return referenceType;
 }
+
 function isFunctionLikeNode(propNode?: Node): boolean {
     if (Node.isMethodDeclaration(propNode) || Node.isMethodSignature(propNode)) {
         return true;
