@@ -25,7 +25,10 @@ import { Schema, Swagger, isReferenceObject } from "./swagger";
 export class SpecGenerator {
     private debugger = debug("typescript-rest-swagger:spec-generator");
 
-    constructor(private readonly metadata: Metadata, private readonly config: SwaggerConfig) {}
+    constructor(
+        private readonly metadata: Metadata,
+        private readonly config: SwaggerConfig
+    ) {}
 
     public async generate(): Promise<void> {
         this.debugger("Generating swagger files.");
@@ -232,16 +235,19 @@ export class SpecGenerator {
                     "multipart/form-data": {
                         schema: {
                             type: "object",
-                            properties: formDataParameter.reduce((acc, param) => {
-                                const paramType = this.getSwaggerType(param.type);
-                                if (paramType) {
-                                    if (!isReferenceObject(paramType)) {
-                                        paramType.description = param.description;
+                            properties: formDataParameter.reduce(
+                                (acc, param) => {
+                                    const paramType = this.getSwaggerType(param.type);
+                                    if (paramType) {
+                                        if (!isReferenceObject(paramType)) {
+                                            paramType.description = param.description;
+                                        }
+                                        acc[param.name] = paramType;
                                     }
-                                    acc[param.name] = paramType;
-                                }
-                                return acc;
-                            }, {} as { [key: string]: Schema })
+                                    return acc;
+                                },
+                                {} as { [key: string]: Schema }
+                            )
                         }
                     }
                 }
