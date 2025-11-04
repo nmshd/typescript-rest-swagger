@@ -195,7 +195,6 @@ export interface Type {
         | "date"
         | "datetime"
         | "enum"
-        | "undefined"
         | "const"
         | string;
     simpleTypeName?: string;
