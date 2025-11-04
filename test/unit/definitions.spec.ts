@@ -566,4 +566,17 @@ describe("Definition generation", () => {
             expect(propSpec.$ref).toEqual("#/components/schemas/RecursiveType");
         });
     });
+
+    describe("Objects with functions", () => {
+        test("properties of classes that are functions should be ignored in definitions", async () => {
+            let expression = jsonata("components.schemas.ClassWithFunctions");
+            let typeSpec = await expression.evaluate(spec);
+            expect(Object.keys(typeSpec.properties)).toEqual([]);
+        });
+        test("properties of interfaces that are functions should be ignored in definitions", async () => {
+            let expression = jsonata("components.schemas.InterfaceWithFunctions");
+            let typeSpec = await expression.evaluate(spec);
+            expect(Object.keys(typeSpec.properties)).toEqual([]);
+        });
+    });
 });
