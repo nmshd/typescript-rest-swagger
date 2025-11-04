@@ -89,7 +89,7 @@ export function resolveType(type?: MorphType, node?: Node): Type {
             resultType = { typeName: "void" };
             break;
         case typeObject.isUndefined:
-            resultType = { typeName: "undefined" };
+            resultType = { typeName: "void" };
             break;
         case typeObject.isBoolean:
             resultType = { typeName: "boolean" };
