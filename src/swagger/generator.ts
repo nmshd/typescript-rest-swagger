@@ -238,7 +238,6 @@ export class SpecGenerator {
                                     if (!isReferenceObject(paramType)) {
                                         paramType.description = param.description;
                                     }
-                                    // acc[param.name] = {type:paramType};
                                     acc[param.name] = paramType;
                                 }
                                 return acc;

@@ -447,12 +447,6 @@ describe("Definition generation", () => {
     describe("SpecGenerator", () => {
         it("should be able to generate open api 3.1 outputs", async () => {
             const openapi = await new SpecGenerator(metadata, getDefaultOptions()).getOpenApiSpec();
-            // const expression = jsonata('paths."/supersecure".get.security');
-            // expect(await expression.evaluate(openapi)).toStrictEqual([
-            //   { default: ["access_token"] },
-            //   { default: ["user_email"] },
-            //   { default: [] },
-            // ]);
             expect(openapi.openapi).toEqual("3.1.0");
         });
     });
