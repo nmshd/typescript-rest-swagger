@@ -1,4 +1,4 @@
-import { EnumDeclaration, Expression, Type as MorphType, Node, Project, ts } from "ts-morph";
+import { EnumDeclaration, Expression, Type as MorphType, Node, Project, ts, TypeNode } from "ts-morph";
 import { getJSDocDescriptionFromProperty } from "../utils/jsDocUtils";
 import { getNodeAsTsMorphNode } from "../utils/utils";
 import {
@@ -142,6 +142,13 @@ export function resolveType(type?: MorphType, node?: Node): Type {
                 }
             }
 
+            if (Node.isTypeNode(node)) {
+                typeNodeName = node.getText() ?? "";
+                if (typeNodeName.trim().startsWith("{")) {
+                    typeNodeName = "";
+                }
+            }
+
             typeName = typeName || typeNodeName;
 
             typeName = replaceNameText(typeName);
@@ -256,9 +263,17 @@ export function resolveType(type?: MorphType, node?: Node): Type {
                 };
                 return enumType;
             }
+            let unionTypeNodes: TypeNode[] = [];
+            if (Node.isTyped(node)) {
+                let typeNode = node?.getTypeNode();
 
-            const unionTypes = type.getUnionTypes().map((subType) => {
-                return resolveType(subType);
+                if (Node.isUnionTypeNode(typeNode)) {
+                    unionTypeNodes = typeNode.getTypeNodes();
+                }
+            }
+
+            const unionTypes = type.getUnionTypes().map((subType, index) => {
+                return resolveType(subType, unionTypeNodes[index]);
             });
 
             // Remove duplicate types from union

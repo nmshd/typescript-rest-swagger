@@ -30,6 +30,40 @@ export class TestUnionType {
     }
 }
 
+type inferred<T> = T extends {
+    a: {
+        type: any;
+    };
+}
+    ? T["a"]["type"]
+    : never;
+
+const typeToInferA = {
+    a: {
+        type: {
+            a: 123,
+            b: "string"
+        }
+    }
+};
+
+type inferredTypeA = inferred<typeof typeToInferA>;
+
+const typeToInferB = {
+    a: {
+        type: {
+            a: "string",
+            b: 123
+        }
+    }
+};
+
+type inferredTypeB = inferred<typeof typeToInferB>;
+
+type ObjectWithInferredTypeUnion = {
+    data: inferredTypeB | inferredTypeA;
+};
+
 interface Address {
     street: string;
 }
@@ -236,6 +270,18 @@ export class MyService {
     @POST
     @Path("interface-with-functions")
     public interfaceWithFunctions(body: InterfaceWithFunctions): any {
+        return body;
+    }
+
+    @POST
+    @Path("zod-type")
+    public zodType(body: inferredTypeB): any {
+        return body;
+    }
+
+    @POST
+    @Path("zod-union-type")
+    public objectWithZodTypeUnion(body: ObjectWithInferredTypeUnion): any {
         return body;
     }
 }
