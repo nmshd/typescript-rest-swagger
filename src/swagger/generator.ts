@@ -35,9 +35,6 @@ export class SpecGenerator {
         this.debugger("Swagger Config: %j", this.config);
         this.debugger("Services Metadata: %j", this.metadata);
         let spec: any = this.getSwaggerSpec();
-        // if (this.config.outputFormat === Specification.OpenApi_3) {
-        //     spec = await this.convertToOpenApiSpec(spec);
-        // }
         return new Promise<void>((resolve, reject) => {
             const swaggerDirs = _.castArray(this.config.outputDirectory);
             this.debugger("Saving specs to folders: %j", swaggerDirs);
@@ -45,14 +42,14 @@ export class SpecGenerator {
                 mkdir(swaggerDir, { recursive: true })
                     .then(() => {
                         this.debugger("Saving specs json file to folder: %j", swaggerDir);
-                        fs.writeFile(`${swaggerDir}/swagger.json`, JSON.stringify(spec, null, "\t"), (err: any) => {
+                        fs.writeFile(`${swaggerDir}/openapi.json`, JSON.stringify(spec, null, "\t"), (err: any) => {
                             if (err) {
                                 return reject(err);
                             }
                             if (this.config.yaml) {
                                 this.debugger("Saving specs yaml file to folder: %j", swaggerDir);
                                 fs.writeFile(
-                                    `${swaggerDir}/swagger.yaml`,
+                                    `${swaggerDir}/openapi.yaml`,
                                     YAML.stringify(spec, 1000),
                                     (errYaml: any) => {
                                         if (errYaml) {
@@ -83,7 +80,7 @@ export class SpecGenerator {
                 version: ""
             },
             paths: this.buildPaths(),
-            openapi: "3.0.1"
+            openapi: "3.1.0"
         };
 
         spec.security = this.config.securityDefinitions;
@@ -117,19 +114,6 @@ export class SpecGenerator {
     public getOpenApiSpec() {
         return this.getSwaggerSpec();
     }
-
-    // private async convertToOpenApiSpec(spec: Swagger.Spec) {
-    //     this.debugger('Converting specs to openapi 3.0');
-    //     const converter = require('swagger2openapi');
-    //     const options = {
-    //         patch: true,
-    //         warnOnly: true,
-
-    //     };
-    //     const openapi = await converter.convertObj(spec, options);
-    //     this.debugger('Converted to openapi 3.0: %j', openapi);
-    //     return openapi.openapi;
-    // }
 
     private buildDefinitions() {
         const definitions: { [definitionsName: string]: OpenAPIV3_1.SchemaObject } = {};
@@ -258,7 +242,6 @@ export class SpecGenerator {
                                         if (!isReferenceObject(paramType)) {
                                             paramType.description = param.description;
                                         }
-                                        // acc[param.name] = {type:paramType};
                                         acc[param.name] = paramType;
                                     }
                                     return acc;
@@ -450,7 +433,8 @@ export class SpecGenerator {
     private getSwaggerTypeForObjectType(objectType: ObjectType): Schema {
         return {
             type: "object",
-            properties: this.buildProperties(objectType.properties)
+            properties: this.buildProperties(objectType.properties),
+            required: objectType.properties.filter((p) => p.required).map((p) => p.name)
         };
     }
 

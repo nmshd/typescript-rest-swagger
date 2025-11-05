@@ -9,11 +9,6 @@ export interface Config {
     swagger: SwaggerConfig;
 }
 
-export enum Specification {
-    Swagger_2 = "Swagger_2",
-    OpenApi_3 = "OpenApi_3"
-}
-
 export interface SwaggerConfig {
     /**
      * Support the output to be an yaml file
@@ -29,11 +24,6 @@ export interface SwaggerConfig {
      * The entry point to your API
      */
     entryFile: string | Array<string>;
-
-    /**
-     * Inform if the generated spec will be in swagger 2.0 format or i open api 3.0
-     */
-    outputFormat?: Specification;
 
     /**
      * API host, expressTemplate.g. localhost:3000 or https://myapi.com

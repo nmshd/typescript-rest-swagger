@@ -445,15 +445,9 @@ describe("Definition generation", () => {
     });
 
     describe("SpecGenerator", () => {
-        it("should be able to generate open api 3.0 outputs", async () => {
+        it("should be able to generate open api 3.1 outputs", async () => {
             const openapi = await new SpecGenerator(metadata, getDefaultOptions()).getOpenApiSpec();
-            // const expression = jsonata('paths."/supersecure".get.security');
-            // expect(await expression.evaluate(openapi)).toStrictEqual([
-            //   { default: ["access_token"] },
-            //   { default: ["user_email"] },
-            //   { default: [] },
-            // ]);
-            expect(openapi.openapi).toEqual("3.0.1");
+            expect(openapi.openapi).toEqual("3.1.0");
         });
     });
 
@@ -550,6 +544,7 @@ describe("Definition generation", () => {
             expect(typeSpec.properties.b).toBeDefined();
             expect(typeSpec.properties.a.type).toEqual("string");
             expect(typeSpec.properties.b.type).toEqual("number");
+            expect(typeSpec.required).toEqual(["a", "b"]);
         });
     });
 
@@ -577,6 +572,35 @@ describe("Definition generation", () => {
             let expression = jsonata("components.schemas.InterfaceWithFunctions");
             let typeSpec = await expression.evaluate(spec);
             expect(Object.keys(typeSpec.properties)).toEqual([]);
+        });
+    });
+
+    describe("Inferred types should be named properly", () => {
+        test("Inferred types should have the right name and definition", async () => {
+            let expression = jsonata("components.schemas.inferredTypeB");
+            let typeSpec = await expression.evaluate(spec);
+            expect(typeSpec).toBeDefined();
+            expect(typeSpec.properties).toBeDefined();
+            expect(typeSpec.properties.a).toBeDefined();
+            expect(typeSpec.properties.a.type).toEqual("string");
+            expect(typeSpec.properties.b).toBeDefined();
+            expect(typeSpec.properties.b.type).toEqual("number");
+        });
+
+        test("Inferred union types should create named types for each instance", async () => {
+            let expression = jsonata(
+                'paths."/mypath/zod-union-type".post.requestBody.content."application/json".schema."$ref"'
+            );
+            let reqBodyRef: string = await expression.evaluate(spec);
+
+            expect(reqBodyRef).toEqual("#/components/schemas/ObjectWithInferredTypeUnion");
+
+            expression = jsonata("components.schemas.ObjectWithInferredTypeUnion.properties.data");
+            let propSpec = await expression.evaluate(spec);
+            expect(propSpec.oneOf).toBeDefined();
+            expect(propSpec.oneOf.length).toEqual(2);
+            expect(propSpec.oneOf[0].$ref).toEqual("#/components/schemas/inferredTypeB");
+            expect(propSpec.oneOf[1].$ref).toEqual("#/components/schemas/inferredTypeA");
         });
     });
 });
