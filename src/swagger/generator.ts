@@ -433,7 +433,8 @@ export class SpecGenerator {
     private getSwaggerTypeForObjectType(objectType: ObjectType): Schema {
         return {
             type: "object",
-            properties: this.buildProperties(objectType.properties)
+            properties: this.buildProperties(objectType.properties),
+            required: objectType.properties.filter((p) => p.required).map((p) => p.name)
         };
     }
 

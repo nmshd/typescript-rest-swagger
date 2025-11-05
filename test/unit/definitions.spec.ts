@@ -544,6 +544,7 @@ describe("Definition generation", () => {
             expect(typeSpec.properties.b).toBeDefined();
             expect(typeSpec.properties.a.type).toEqual("string");
             expect(typeSpec.properties.b.type).toEqual("number");
+            expect(typeSpec.required).toEqual(["a", "b"]);
         });
     });
 
