@@ -4,7 +4,7 @@ import { mkdir } from "fs/promises";
 import * as _ from "lodash";
 import { OpenAPIV3_1 } from "openapi-types";
 import * as pathUtil from "path";
-import * as YAML from "yamljs";
+import * as YAML from "yaml";
 import { SwaggerConfig } from "../config";
 import {
     ArrayType,
@@ -50,7 +50,7 @@ export class SpecGenerator {
                                 this.debugger("Saving specs yaml file to folder: %j", swaggerDir);
                                 fs.writeFile(
                                     `${swaggerDir}/openapi.yaml`,
-                                    YAML.stringify(spec, 1000),
+                                    YAML.stringify(spec, { indent: 4 }),
                                     (errYaml: any) => {
                                         if (errYaml) {
                                             return reject(errYaml);

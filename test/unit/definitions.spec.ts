@@ -4,7 +4,7 @@ import { Metadata, MetadataGenerator } from "../../src/metadata/metadataGenerato
 import { SpecGenerator } from "../../src/swagger/generator";
 import { Swagger } from "../../src/swagger/swagger";
 import { getDefaultOptions } from "../data/defaultOptions";
-import YAML = require("yamljs");
+import YAML = require("yaml");
 
 const jsonata = require("jsonata");
 
@@ -16,7 +16,7 @@ describe("Definition generation", () => {
     beforeAll(async () => {
         metadata = new MetadataGenerator(["./test/data/apis.ts"], "./test/tsconfig.json").generate();
         spec = new SpecGenerator(metadata, getDefaultOptions()).getSwaggerSpec();
-        specString = YAML.stringify(spec, 10, 4);
+        specString = YAML.stringify(spec, { indent: 4 });
         specDeRef = (await swaggerParser.dereference(cloneDeep(spec) as any)) as unknown as Swagger.Spec;
     });
 
