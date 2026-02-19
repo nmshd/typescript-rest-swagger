@@ -1,10 +1,10 @@
 import * as swaggerParser from "@apidevtools/swagger-parser";
 import { cloneDeep } from "lodash";
+import * as YAML from "yamljs";
 import { Metadata, MetadataGenerator } from "../../src/metadata/metadataGenerator";
 import { SpecGenerator } from "../../src/swagger/generator";
 import { Swagger } from "../../src/swagger/swagger";
 import { getDefaultOptions } from "../data/defaultOptions";
-import YAML = require("yamljs");
 
 const jsonata = require("jsonata");
 
@@ -471,6 +471,15 @@ describe("Definition generation", () => {
 
             const res = await expression.evaluate(spec);
             expect(res).toEqual("#/components/schemas/GenericA-Deep-EndArray.Error-.Error-");
+        });
+
+        test("GenericAWithUnion", async () => {
+            const expression = jsonata(
+                'paths."/mypath/genericWithUnion".get.responses."200".content."application/json".schema."$ref"'
+            );
+
+            const res = await expression.evaluate(spec);
+            expect(res).toEqual("#/components/schemas/GenericWithUnion-Union-");
         });
     });
 

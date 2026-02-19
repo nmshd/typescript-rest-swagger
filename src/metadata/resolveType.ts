@@ -1,3 +1,4 @@
+import * as _ from "lodash";
 import { EnumDeclaration, Expression, Type as MorphType, Node, Project, ts, TypeNode } from "ts-morph";
 import { getJSDocDescriptionFromProperty } from "../utils/jsDocUtils";
 import { getNodeAsTsMorphNode } from "../utils/utils";
@@ -263,24 +264,32 @@ export function resolveType(type?: MorphType, node?: Node): Type {
                 };
                 return enumType;
             }
+            let unionTypes = type.getUnionTypes();
             let unionTypeNodes: TypeNode[] = [];
             if (Node.isTyped(node)) {
                 let typeNode = node?.getTypeNode();
 
                 if (Node.isUnionTypeNode(typeNode)) {
                     unionTypeNodes = typeNode.getTypeNodes();
+                    if (
+                        unionTypeNodes.some(
+                            (n, index) => !_.isEqual(getTypeObject(n.getType()), getTypeObject(unionTypes[index]))
+                        )
+                    ) {
+                        unionTypeNodes = [];
+                    }
                 }
             }
 
-            const unionTypes = type.getUnionTypes().map((subType, index) => {
+            const resultUnionTypes = unionTypes.map((subType, index) => {
                 return resolveType(subType, unionTypeNodes[index]);
             });
 
             // Remove duplicate types from union
-            const uniqueUnionTypes = unionTypes.filter((unionType, index) => {
+            const uniqueUnionTypes = resultUnionTypes.filter((unionType, index) => {
                 const serializedUnionType = JSON.stringify(unionType);
                 return (
-                    unionTypes.findIndex((t) => {
+                    resultUnionTypes.findIndex((t) => {
                         return JSON.stringify(t) === serializedUnionType;
                     }) === index
                 );

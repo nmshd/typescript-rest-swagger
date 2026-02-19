@@ -93,6 +93,12 @@ interface GenericA<A, B> {
     error: B;
 }
 
+type Union = { a: number } | { b: number };
+
+interface GenericWithUnion<A> {
+    deep: A | undefined;
+}
+
 enum TestEnum {
     Option1 = "option1",
     Option2 = "option2"
@@ -170,6 +176,15 @@ export class MyService {
                 error: { text: "error" }
             },
             error: { text: "error" }
+        };
+    }
+    @GET
+    @Path("genericWithUnion")
+    public testGenericWithUnion(): GenericWithUnion<Union> {
+        return {
+            deep: {
+                a: 1
+            }
         };
     }
 
