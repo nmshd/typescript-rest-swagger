@@ -8,7 +8,7 @@ import * as _ from "lodash";
 import * as path from "path";
 import { isAbsolute, join } from "path";
 import * as ts from "typescript";
-import * as YAML from "yamljs";
+import * as YAML from "yaml";
 import { Config, SwaggerConfig } from "./config";
 import { MetadataGenerator } from "./metadata/metadataGenerator";
 import { SpecGenerator } from "./swagger/generator";
@@ -78,7 +78,7 @@ function getPackageJsonValue(key: string): string {
 function getConfig(configPath = "swagger.json"): Config {
     const configFile = `${workingDir}/${configPath}`;
     if (_.endsWith(configFile, ".yml") || _.endsWith(configFile, ".yaml")) {
-        return YAML.load(configFile);
+        return YAML.parse(fs.readFileSync(configFile, "utf8"));
     } else if (_.endsWith(configFile, ".js")) {
         return require(path.join(configFile));
     } else {
