@@ -39,7 +39,7 @@
   },
   "dependencies": {
     "@apidevtools/swagger-parser": "^12.1.0",
-    "@nmshd/typescript-rest": "^3.2.2",
+    "@nmshd/typescript-rest": "^3.2.3",
     "argparse": "^2.0.1",
     "debug": "^4.4.3",
     "fs-extra-promise": "^1.0.1",
