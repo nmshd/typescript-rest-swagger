@@ -1,5 +1,4 @@
-import { ExpressionWithTypeArguments, Node } from "ts-morph";
-import * as ts from "typescript";
+import { ExpressionWithTypeArguments, Node, ts } from "ts-morph";
 
 export function getJSDocDescription(node: ts.Node) {
     const jsDocs = (node as any).jsDoc as Array<ts.JSDoc>;
