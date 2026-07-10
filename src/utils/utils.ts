@@ -1,7 +1,6 @@
 "use strict";
 
-import { Node as MorphNode, Project } from "ts-morph";
-import { Node } from "typescript";
+import { Node as MorphNode, Project, ts } from "ts-morph";
 
 export function normalizePath(path?: string) {
     if (!path) {
@@ -12,7 +11,7 @@ export function normalizePath(path?: string) {
     parts = parts.map((part) => (part.startsWith(":") ? `{${part.slice(1)}}` : part));
     return parts.join("/");
 }
-export function getNodeAsTsMorphNode(tsNode: Node, project: Project): MorphNode {
+export function getNodeAsTsMorphNode(tsNode: ts.Node, project: Project): MorphNode {
     let node = project.getSourceFileOrThrow(tsNode.getSourceFile().fileName).getDescendantAtPos(tsNode.pos);
 
     while (node?.getPos() !== tsNode.pos || node?.getEnd() !== tsNode.end) {
