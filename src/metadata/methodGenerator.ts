@@ -1,6 +1,5 @@
 import * as pathUtil from "path";
-import { MethodDeclaration, Project } from "ts-morph";
-import * as ts from "typescript";
+import { MethodDeclaration, Project, ts } from "ts-morph";
 import { DecoratorData, getDecorators } from "../utils/decoratorUtils";
 import { getJSDocDescription, getJSDocTag, isExistJSDocTag } from "../utils/jsDocUtils";
 import { getNodeAsTsMorphNode, normalizePath } from "../utils/utils";
