@@ -1,5 +1,4 @@
-import { Project } from "ts-morph";
-import * as ts from "typescript";
+import { Project, ts } from "ts-morph";
 import { getDecoratorTextValue, isDecorator } from "../utils/decoratorUtils";
 import { normalizePath } from "../utils/utils";
 import { EndpointGenerator } from "./endpointGenerator";

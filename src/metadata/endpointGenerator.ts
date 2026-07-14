@@ -2,8 +2,7 @@
 
 import * as debug from "debug";
 import * as _ from "lodash";
-import { ClassDeclaration, MethodDeclaration, Node, Project } from "ts-morph";
-import * as ts from "typescript";
+import { ClassDeclaration, MethodDeclaration, Node, Project, ts } from "ts-morph";
 import { getDecorators } from "../utils/decoratorUtils";
 import { getNodeAsTsMorphNode } from "../utils/utils";
 import { ResponseType, Type } from "./metadataGenerator";

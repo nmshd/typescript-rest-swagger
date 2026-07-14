@@ -1,5 +1,4 @@
-import { Project } from "ts-morph";
-import * as ts from "typescript";
+import { Project, ts } from "ts-morph";
 import { DecoratorData, getDecoratorName, getDecoratorOptions, getDecoratorTextValue } from "../utils/decoratorUtils";
 import { getNodeAsTsMorphNode } from "../utils/utils";
 import { isUnionType, MetadataGenerator, Parameter, Type } from "./metadataGenerator";

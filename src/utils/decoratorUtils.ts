@@ -1,4 +1,4 @@
-import * as ts from "typescript";
+import { ts } from "ts-morph";
 
 export function getDecorators(node: ts.Node, isMatching: (identifier: DecoratorData) => boolean): Array<DecoratorData> {
     const decorators = ts.canHaveDecorators(node) ? ts.getDecorators(node) : [];
