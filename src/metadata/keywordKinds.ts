@@ -1,17 +1,17 @@
-import { SyntaxKind } from "typescript";
+import { ts } from "ts-morph";
 
 export const keywords = [
-    SyntaxKind.AnyKeyword,
-    SyntaxKind.UnknownKeyword,
-    SyntaxKind.NumberKeyword,
-    SyntaxKind.BigIntKeyword,
-    SyntaxKind.ObjectKeyword,
-    SyntaxKind.BooleanKeyword,
-    SyntaxKind.StringKeyword,
-    SyntaxKind.SymbolKeyword,
-    SyntaxKind.ThisKeyword,
-    SyntaxKind.VoidKeyword,
-    SyntaxKind.UndefinedKeyword,
-    SyntaxKind.NullKeyword,
-    SyntaxKind.NeverKeyword
+    ts.SyntaxKind.AnyKeyword,
+    ts.SyntaxKind.UnknownKeyword,
+    ts.SyntaxKind.NumberKeyword,
+    ts.SyntaxKind.BigIntKeyword,
+    ts.SyntaxKind.ObjectKeyword,
+    ts.SyntaxKind.BooleanKeyword,
+    ts.SyntaxKind.StringKeyword,
+    ts.SyntaxKind.SymbolKeyword,
+    ts.SyntaxKind.ThisKeyword,
+    ts.SyntaxKind.VoidKeyword,
+    ts.SyntaxKind.UndefinedKeyword,
+    ts.SyntaxKind.NullKeyword,
+    ts.SyntaxKind.NeverKeyword
 ];
