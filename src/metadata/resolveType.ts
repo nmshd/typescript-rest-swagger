@@ -135,14 +135,15 @@ export function resolveType(type?: MorphType, node?: Node): Type {
             }
             let typeNodeName = "";
 
-            if (Node.isTyped(node)) {
+            // Generic parameter names describe the declaration, not the resolved object type.
+            if (Node.isTyped(node) && !node.getType().isTypeParameter()) {
                 typeNodeName = node.getTypeNode()?.getText() ?? "";
                 if (typeNodeName.trim().startsWith("{")) {
                     typeNodeName = "";
                 }
             }
 
-            if (Node.isTypeNode(node)) {
+            if (Node.isTypeNode(node) && !node.getType().isTypeParameter()) {
                 typeNodeName = node.getText() ?? "";
                 if (typeNodeName.trim().startsWith("{")) {
                     typeNodeName = "";
